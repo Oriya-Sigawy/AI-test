@@ -16,6 +16,7 @@
 - Q: Currency-code validation — real ISO 4217 registry, format-only, or fixed allow-list? → A: Format only (3 ASCII letters, uppercase-normalized); no registry check (unrequested, keeps scope/simplicity).
 - Q: Pagination scope — expenses only, all list endpoints, or none? → A: All list endpoints (expenses, categories, budgets) are paginated uniformly. (Deliberate: the assignment names pagination only for expense listing; applying it to all lists is a chosen API-consistency decision, accepted as a small, justified extension of the SHOULD-have — not an inferred requirement.)
 - Q: Default list ordering (needed for stable pagination/tests)? → A: Expenses ordered by date descending, then identifier descending (stable tiebreak); categories/budgets a simple stable order (plan detail).
+- Q: Cross-user access to a resource by id — distinct "forbidden" outcome, or "not found"? → A: Not found. A resource that exists but belongs to another user is reported identically to a non-existent id, so the API never discloses the existence of other users' resources (OWASP API1 / BOLA enumeration hardening). The "forbidden" category is therefore reserved for acting on a *visible* read-only resource — i.e. a system-default category (FR-013). This is a deliberate Security-gate decision that favors non-disclosure over a distinct cross-user status.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -163,9 +164,11 @@ per-month trend figures, and the per-category budget status.
 - **Budget-exceeded check on back/future-dated expenses** → uses the expense's month, not the current
   calendar month.
 - **Change default currency after expenses exist** → rejected (preserves single-currency integrity).
-- **Access another user's data** → rejected; users see and modify only their own.
+- **Access another user's data** → rejected as not-found (indistinguishable from a non-existent id,
+  so existence is never disclosed); users see and modify only their own.
 - **Operate on a non-existent expense, category, or budget** → not-found error.
-- **Budget for a category the user cannot access** → rejected.
+- **Budget for a category the user cannot access** → rejected as not-found (another user's category
+  is indistinguishable from a non-existent one).
 - **Missing or malformed required fields** → validation error identifying the field(s).
 
 ## Requirements *(mandatory)*
@@ -229,7 +232,9 @@ per-month trend figures, and the per-category budget status.
 - **FR-022**: System MUST let a user retrieve, update, and delete their own expenses, re-applying all
   creation-time validations on update.
 - **FR-023**: System MUST ensure a user can only read, modify, or delete their own expenses,
-  categories, and budgets, never another user's.
+  categories, and budgets, never another user's. An attempt to reach another user's resource by id
+  MUST be reported as not-found (identical to a non-existent id), never as a distinct outcome that
+  would disclose the resource's existence (see Clarifications 2026-06-01).
 
 **Budgets**
 
@@ -265,10 +270,13 @@ per-month trend figures, and the per-category budget status.
 **Cross-cutting**
 
 - **FR-034**: System MUST return a distinct outcome category for each failure class — invalid input,
-  unauthenticated, forbidden (cross-user), not found, and conflict (duplicate or in-use) — each with
-  its own appropriate status code, and successful requests their own. A validation failure MUST
-  identify the offending field and reason. (The category-to-status-code mapping is a planning detail;
-  tests assert the category and, for validation failures, the field and reason.)
+  unauthenticated, forbidden (acting on a *visible* read-only resource, i.e. a system-default
+  category), not found (a non-existent id **or** another user's resource — the two are
+  indistinguishable by design; see Clarifications 2026-06-01 and FR-023), and conflict (duplicate or
+  in-use) — each with its own appropriate status code, and successful requests their own. A
+  validation failure MUST identify the offending field and reason. (The category-to-status-code
+  mapping is a planning detail; tests assert the category and, for validation failures, the field
+  and reason.)
 - **FR-035**: System MUST paginate every list endpoint (expenses, categories, budgets) uniformly,
   returning the matching items plus pagination metadata (at least total count and the caller's
   position), and MUST reject malformed pagination parameters. Default and maximum page size and the

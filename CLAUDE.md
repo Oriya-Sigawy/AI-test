@@ -126,3 +126,11 @@ in order; run the listed gates before moving on.
    inline per task. The task generator SHOULD emit a final review task in `docs/tasks.md`, but the
    requirement to perform this review lives here, not in `docs/tasks.md`.
 
+<!-- SPECKIT START -->
+## Active Feature
+
+- **001-expense-tracker-api** — Personal Expense Tracker API.
+  Plan: [`specs/001-expense-tracker-api/plan.md`](specs/001-expense-tracker-api/plan.md)
+  (Phase 0–1 artifacts: `research.md`, `data-model.md`, `contracts/api.md`, `quickstart.md`).
+<!-- SPECKIT END -->
+
