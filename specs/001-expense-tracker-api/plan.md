@@ -68,8 +68,10 @@ expenses each; ~6 resource groups (auth, users, categories, expenses, budgets, r
 - **`app/routers/`** — HTTP only: routing, status codes, dependency injection (`get_db`,
   `get_current_user`), wiring requests to services. One module per resource group.
 - **`app/services.py`** — business logic: validation rules, budget-warning computation, report
-  aggregation, category-deletion guard, currency-change guard. Functions take a `Session` and the
-  acting user and raise typed domain exceptions. One module at this size; split only if it grows.
+  aggregation, category-deletion guard (blocks while expenses reference it; on a successful delete
+  of an unused category, **removes any budgets that referenced it** — FR-015), currency-change
+  guard. Functions take a `Session` and the acting user and raise typed domain exceptions. One
+  module at this size; split only if it grows.
 - **`app/models.py`** (ORM entities) and **`app/schemas.py`** (Pydantic request/response models,
   incl. pagination + error shapes) each hold all four entities together — small enough to read
   better in one file than scattered.
@@ -92,7 +94,7 @@ fixed here:
 | unauthenticated | **401** | Missing / malformed / invalid / expired token; bad login credentials (one generic message) |
 | forbidden | **403** | Modifying/deleting a **visible-but-unowned read-only** resource — a system-default category (FR-013) |
 | not found | **404** | A resource id outside the user's scope (another user's expense/category/budget, or non-existent). Owner-scoped queries make cross-user ids indistinguishable from missing, satisfying FR-023 and avoiding OWASP-API1 enumeration. **403 is reserved only for the genuinely-visible system defaults.** |
-| conflict | **409** | Duplicate email (FR-002), duplicate category name (FR-011), deleting an in-use category (FR-014, includes count), changing currency after expenses exist (FR-007) |
+| conflict | **409** | Duplicate email (FR-002), duplicate category name (FR-011), deleting an in-use category (FR-014; body carries the associated-expense **count** + a reassign-first advisory), changing currency after expenses exist (FR-007) |
 | success | 200 / 201 / 204 | 201 create; 204 delete; 200 otherwise |
 
 ### Validation (anchored from spec §Validation Rules)
@@ -111,6 +113,7 @@ Enforced by Pydantic where structural, by services where relational:
 - **Display name** 1–100; **category name** 1–50, trimmed; **icon** non-empty; **color** `#RRGGBB`.
 - **Description** ≤ 500 optional; **receipt URL** accepted-format, ≤ 2048, optional, **stored and
   returned only — never fetched**.
+- **Budget month/year**: `month` 1–12, valid `year`; malformed → 422.
 - **Pagination**: `limit` (default 50, max 100) + `offset` (default 0, ≥ 0); malformed → 422.
 - **Ordering (FR-036)**: expenses `date DESC, id DESC`; categories `is_system DESC, name ASC`;
   budgets `year DESC, month DESC, id DESC`.
