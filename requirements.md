@@ -196,3 +196,8 @@ understanding and ability to explain the code, sound architectural decisions, ca
 bad AI advice, and whether the final product is correct, secure, and well-structured.
 The assignment's own guidance: start with the data model, build expenses first, then
 budget logic, then reports; test the math; don't over-engineer.
+
+Additionally, this assignment will be examined against the **five review gates** defined
+in [`CLAUDE.md`](./CLAUDE.md): **Security**, **Testing**, **Performance**, **Logging**, and
+**Architecture**. A change is not considered complete until every applicable gate has been
+reviewed and passes.
