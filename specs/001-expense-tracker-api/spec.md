@@ -177,8 +177,8 @@ per-month trend figures, and the per-category budget status.
   reject invalid credentials without issuing a token, using one generic message that does not reveal
   whether the email exists.
 - **FR-005**: System MUST require a valid token for every operation except registration and login,
-  reject missing or invalid tokens as unauthorized, identify the acting user from the token, and scope
-  all returned or changed data to that user.
+  reject missing, malformed, invalid, or expired tokens as unauthorized, identify the acting user from
+  the token, and scope all returned or changed data to that user.
 - **FR-006**: System MUST let an authenticated user retrieve their own profile (email, display name,
   default currency).
 - **FR-007**: System MUST let an authenticated user update their display name at any time and their
