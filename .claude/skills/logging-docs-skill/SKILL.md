@@ -59,8 +59,11 @@ the findings and gives final acceptance.
       which entity/id), including a **request/correlation id** so one request's logs trace end-to-end.
 - [ ] **No sensitive data** — no passwords, tokens, keys, full card/PII, or raw request bodies; identify
       records by id, not by secret.
-- [ ] **Right level** — `DEBUG` detail / `INFO` milestones / `WARNING` recoverable anomalies (e.g. budget
-      exceeded) / `ERROR` failures; no `print()`; not noisy (no per-iteration logs in hot paths).
+- [ ] **Right level** — `DEBUG` detail / `INFO` milestones / `WARNING` recoverable operational
+      anomalies (e.g. a retried transient failure, a rejected/conflicting operation) / `ERROR` failures;
+      no `print()`; not noisy (no per-iteration logs in hot paths). A **budget-exceeded** outcome is
+      business-normal — log it at `INFO` and surface it to the user via the `budget_warning` response
+      field, **not** as a `WARNING` log.
 - [ ] **Concise & consistent** — one event per line, structured (logger + message + fields), same shape
       across the codebase; message is self-contained and readable.
 
@@ -90,8 +93,8 @@ Trivial functions need only the one-liner: `"""Return the user's active categori
 
 ```python
 # good — diagnosable, safe, concise
-logger.info("expense created", extra={"user_id": user.id, "expense_id": exp.id, "amount": exp.amount})
-logger.warning("budget exceeded", extra={"user_id": user.id, "category_id": cat.id, "month": "2026-06"})
+logger.info("expense created", extra={"user_id": user.id, "expense_id": exp.id, "amount": exp.amount, "budget_warning": True})  # budget-exceeded is business-normal: INFO + a budget_warning response field, never a WARNING log
+logger.warning("category delete blocked: in use", extra={"user_id": user.id, "category_id": cat.id, "expense_count": 4})
 logger.error("auth failed: token expired", extra={"user_id": user.id})
 
 # bad — leaks secrets / PII, no context, wrong tool
