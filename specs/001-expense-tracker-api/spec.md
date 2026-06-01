@@ -8,6 +8,15 @@
 
 **Input**: User description: "Build a REST API for a personal expense tracking application. Users register and log in with token-based auth and hashed passwords, then track expenses, organize them into categories (system defaults plus custom categories), set monthly per-category budgets, and view spending reports (monthly summary, multi-month trend, and budget status). Business rules include budget-exceeded warnings when creating an expense, blocking category deletion while expenses still reference it, and validation edge cases (future-dated expenses allowed up to 7 days, negative amounts rejected, an amount ceiling, and no duplicate category names per user). Currency conversion is out of scope."
 
+## Clarifications
+
+### Session 2026-06-01
+
+- Q: Monthly-summary per-category breakdown — only spent categories, all categories, or spent+budgeted? → A: Only categories with non-zero spending that month.
+- Q: Currency-code validation — real ISO 4217 registry, format-only, or fixed allow-list? → A: Format only (3 ASCII letters, uppercase-normalized); no registry check (unrequested, keeps scope/simplicity).
+- Q: Pagination scope — expenses only, all list endpoints, or none? → A: All list endpoints (expenses, categories, budgets) are paginated uniformly. (Deliberate: the assignment names pagination only for expense listing; applying it to all lists is a chosen API-consistency decision, accepted as a small, justified extension of the SHOULD-have — not an inferred requirement.)
+- Q: Default list ordering (needed for stable pagination/tests)? → A: Expenses ordered by date descending, then identifier descending (stable tiebreak); categories/budgets a simple stable order (plan detail).
+
 ## User Scenarios & Testing *(mandatory)*
 
 Behaviors are stated once and precisely in **Requirements**, **Validation Rules**, and **Edge
@@ -244,7 +253,7 @@ per-month trend figures, and the per-category budget status.
 **Reports**
 
 - **FR-030**: System MUST provide a monthly spending summary for a specified month giving the total
-  and a per-category breakdown.
+  and a per-category breakdown that includes only categories with non-zero spending that month.
 - **FR-031**: System MUST provide a multi-month trend over the last N months ending at a specified
   month (N caller-provided, default 6, window inclusive of the end month), reporting a total per month
   (zero for months with no expenses).
@@ -260,6 +269,16 @@ per-month trend figures, and the per-category budget status.
   its own appropriate status code, and successful requests their own. A validation failure MUST
   identify the offending field and reason. (The category-to-status-code mapping is a planning detail;
   tests assert the category and, for validation failures, the field and reason.)
+- **FR-035**: System MUST paginate every list endpoint (expenses, categories, budgets) uniformly,
+  returning the matching items plus pagination metadata (at least total count and the caller's
+  position), and MUST reject malformed pagination parameters. Default and maximum page size and the
+  parameter names are planning details. (The assignment requires pagination only for the expense
+  list; applying it uniformly to all lists is a deliberate API-consistency choice — see
+  Clarifications 2026-06-01.)
+- **FR-036**: System MUST return list results in a deterministic, stable order so pagination is
+  repeatable. Expenses MUST be ordered by date descending, then by identifier descending as a
+  tiebreaker; categories and budgets use a simple stable order (e.g., name, or month/year) — the
+  exact category/budget ordering is a planning detail.
 
 ### Validation Rules
 
@@ -270,7 +289,10 @@ guessed during implementation:
   examples anchored in `plan.md`).
 - **Password**: 8–128 characters.
 - **Display name**: required, 1–100 characters.
-- **Default currency**: a 3-letter ISO 4217 code (e.g., USD, EUR, ILS), normalized to uppercase.
+- **Default currency**: a 3-letter code in ISO 4217 shape — exactly three ASCII letters (e.g., USD,
+  EUR, ILS), normalized to uppercase. Validated by **format only**; the code is not checked against
+  the ISO 4217 registry (an allow-list/registry check was considered and rejected as unrequested
+  scope — see Clarifications 2026-06-01).
 - **Category name**: required, 1–50 characters, unique per user case-insensitively (including
   defaults); trimmed of surrounding whitespace before validation/uniqueness checks.
 - **Category icon**: required, a non-empty string identifier (e.g., `"food"`). **Color**: required, a
@@ -300,10 +322,11 @@ planning details):
   description, receipt link, timestamps; a create/update response also includes the budget warning
   when the budget is strictly exceeded (FR-029).
 - **Budget** (and each list entry): identifier, referenced category, amount, month, year.
-- **List responses**: the matching items plus pagination metadata (at least total count and the
-  caller's position) when the listing is paginated.
+- **List responses**: every list endpoint (expenses, categories, budgets) is paginated and returns
+  the matching items plus pagination metadata (at least total count and the caller's position). Page
+  size default/maximum and the page/offset parameter names are planning details.
 - **Monthly summary**: target month/year, overall total, per-category breakdown (category + its
-  total).
+  total) for categories with non-zero spending that month.
 - **Spending trend**: an ordered series, each entry the month/year and that month's total.
 - **Budget status**: target month/year and, per budgeted category, the category, budget, spent, and
   remaining (negative when exceeded).
@@ -361,7 +384,8 @@ each is explainable at interview:
 - **One budget per category per month**: setting an existing one updates it (FR-026).
 - **System defaults**: shared and read-only — not owned by any user, not editable or deletable.
 - **Report scoping**: summary and budget status take a month/year; trend takes an end month and N
-  (default 6). Pagination page size and default list ordering are planning details.
+  (default 6). All list endpoints are paginated (FR-035) with a stable order (FR-036; expenses by
+  date desc then id desc); page size and the category/budget ordering remain planning details.
 - **Chosen defaults & platform**: the Validation Rules limits are reasonable defaults, tunable in
   planning; platform/delivery constraints (runtime version, relational DB, containers, structured
   logging, env-based secrets — requirements §6) are addressed in `plan.md`.
