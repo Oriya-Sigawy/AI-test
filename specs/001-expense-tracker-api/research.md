@@ -94,7 +94,7 @@ the behavioral unknowns; this file settles the *technical* ones.
 
 ## 9. CLI client — Typer + httpx (developer-approved)
 
-- **Decision**: A thin `cli/` Typer app that calls the API over httpx and stores the login token
+- **Decision**: A thin `cli.py` Typer app that calls the API over httpx and stores the login token
   locally; it contains **no business logic**.
 - **Rationale**: The developer chose "API + thin CLI client" this session. Keeping it a pure HTTP
   client means the business rules live in one place (the API) and the CLI stays trivial to test

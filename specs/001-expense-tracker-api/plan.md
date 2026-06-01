@@ -165,7 +165,8 @@ the key `category` (the nested category object used everywhere else in the contr
   **default** name collision can't be one constraint (defaults are null-owner), so it stays an
   explicit service check.
 - **Secrets**: only via env; `.env.example` holds placeholders; real `.env` gitignored. bandit
-  scans the code (hook active now that `pyproject.toml` exists).
+  scans the code (the security hook activates once `pyproject.toml` exists — i.e. from the
+  implementation phase onward).
 - **SSRF**: receipt URLs are stored/returned only; never dereferenced.
 - **Transport**: TLS terminated at the deployment proxy (out of app code scope).
 

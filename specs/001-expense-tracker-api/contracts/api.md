@@ -55,7 +55,7 @@ object.
 
 | Method | Path | Auth | Purpose | Success |
 |---|---|---|---|---|
-| PUT | `/budgets` | yes | Set/update the budget for `(category_id, month, year)` with `amount` (≥0). One per category per month (upsert; FR-026). Negative → 422; inaccessible category → 404. | 200/201 |
+| PUT | `/budgets` | yes | Set/update the budget for `(category_id, month, year)` with `amount` (≥0). One per category per month (idempotent upsert; FR-026). Negative → 422; inaccessible category → 404. | 200 |
 | GET | `/budgets` | yes | List own budgets (paginated; `year DESC, month DESC, id DESC`). | 200 |
 | DELETE | `/budgets/{id}` | yes | Delete own budget. | 204 |
 
@@ -119,7 +119,7 @@ req:  { "name": "Coffee", "icon": "cup", "color": "#6F4E37" }
 resp: { "id": 12, "name": "Coffee", "icon": "cup", "color": "#6F4E37",
         "is_system": false, "owner_id": 1 }
 
-// PUT /budgets  →  200/201    // GET /budgets  →  200 envelope of these objects
+// PUT /budgets  →  200    // GET /budgets  →  200 envelope of these objects
 req:  { "category_id": 3, "amount": "100.00", "month": 6, "year": 2026 }
 resp: { "id": 5, "category": { "id": 3, "name": "Food", "icon": "food", "color": "#FF8800", "is_system": true },
         "amount": "100.00", "month": 6, "year": 2026 }
