@@ -391,6 +391,16 @@ each is explainable at interview:
   logging, env-based secrets — requirements §6) are addressed in `plan.md`.
 - **Auth lifecycle**: tokens are issued at login and simply expire (no logout/revocation endpoint;
   lifetime is a planning detail).
+- **Registration enumeration tradeoff**: login is intentionally enumeration-safe (FR-004, one generic
+  message), but registration (FR-002) discloses that an email is already in use. This account-existence
+  disclosure on registration is a knowingly accepted usability tradeoff — out-of-band email
+  verification (which would close it) is out of scope.
+- **Security items carried into `plan.md`** (from the spec-phase Security review): (1) authentication
+  tokens MUST be integrity-protected (signed or server-side-validated) and expiring, not forgeable
+  opaque strings; (2) receipt links are stored and returned only — the server MUST NOT fetch
+  user-supplied URLs (no SSRF surface); if a fetch is ever introduced, URL validation/allow-listing
+  becomes required; (3) transport MUST be over TLS in the containerized/deployed setup so tokens and
+  passwords are not exposed in transit.
 - **Account lifecycle**: account deletion and password change/reset are out of scope; only display
   name and (pre-expense) default currency are mutable.
 - **Single-user concurrency**: budget and uniqueness checks are evaluated per request without special
