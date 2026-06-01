@@ -85,6 +85,9 @@ User 1───* Budget   *───1 Category
   (FR-014 backstop). `owner_id` is `ON DELETE CASCADE`.
 - **List ordering (FR-036)**: `date DESC, id DESC`.
 - **Filters (FR-021)**: date range, category, amount range; inverted ranges rejected (422).
+- **Relationship loading**: the `category` relationship is **eager-loaded** (`selectinload`) on
+  list/get-expense reads, since responses embed the nested category — avoids an N+1 (one category
+  query per page instead of one per row).
 
 ## Budget
 

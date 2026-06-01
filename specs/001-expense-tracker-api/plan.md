@@ -76,9 +76,12 @@ expenses each; ~6 resource groups (auth, users, categories, expenses, budgets, r
   incl. pagination + error shapes) each hold all four entities together — small enough to read
   better in one file than scattered.
 - **`app/security.py`** (hashing + JWT + `get_current_user`), **`app/database.py`** (`Base`,
-  engine, `SessionLocal`, `get_db`, default-category seed), **`app/config.py`**,
+  engine, `SessionLocal`, `get_db` — **pure infrastructure, imports no domain models**, so the
+  dependency only ever flows `models → database`), **`app/config.py`**,
   **`app/logging_config.py`**, **`app/errors.py`** (domain exceptions + the handlers that map them
-  to the FR-034 categories).
+  to the FR-034 categories). Seeding the default categories is **not** here — it needs the
+  `Category` model, so it lives in `main.py`'s startup (the composition root), keeping `database.py`
+  free of any upward dependency.
 
 The session is passed directly to services; no repository abstraction (needless indirection here).
 
@@ -95,6 +98,7 @@ fixed here:
 | forbidden | **403** | Modifying/deleting a **visible-but-unowned read-only** resource — a system-default category (FR-013) |
 | not found | **404** | A resource id outside the user's scope (another user's expense/category/budget, or non-existent). Owner-scoped queries make cross-user ids indistinguishable from missing, satisfying FR-023 and avoiding OWASP-API1 enumeration. **403 is reserved only for the genuinely-visible system defaults.** |
 | conflict | **409** | Duplicate email (FR-002), duplicate category name (FR-011), deleting an in-use category (FR-014; body carries the associated-expense **count** + a reassign-first advisory), changing currency after expenses exist (FR-007) |
+| unexpected | **500** | Any unhandled exception — **generic body, no exception detail or stack trace returned to the client**; the full error (with stack trace) is logged server-side only (`domain_error`/ERROR), so internals never leak (A05) |
 | success | 200 / 201 / 204 | 201 create; 204 delete; 200 otherwise |
 
 ### Validation (anchored from spec §Validation Rules)
@@ -171,6 +175,9 @@ the key `category` (the nested category object used everywhere else in the contr
   date)` (trailing `date` serves category-filtered ordering for free); budget unique `(owner_id,
   category_id, year, month)`; partial unique on custom category `(owner_id, lower(name))`.
 - **SQL aggregation**: budget checks and all reports use `SUM`/`GROUP BY`, never load-all-then-sum.
+- **No N+1**: expense responses embed the nested `category`, so list/get-expense queries
+  **eager-load `Expense.category`** (`selectinload`) — one expense query + one category query per
+  page, never one category load per row.
 - **Bounded result sets**: all list endpoints paginated (max page size 100).
 - **Pooling**: SQLAlchemy engine default pool; one session per request via dependency.
 - No caching layer (unjustified at this scale).
@@ -178,15 +185,24 @@ the key `category` (the nested category object used everywhere else in the contr
 ### Logging & Documentation (Logging gate; SHOULD-have structured logging)
 
 - **Structured logs** to stdout via stdlib `logging` with a JSON formatter (`logging_config.py`),
-  initialized at startup — no logging-framework dependency. One line per request outcome plus
-  explicit events for: registration, login success/failure (without revealing which credential
-  failed), expense create/update (and whether a budget warning fired), blocked category deletion
-  (with count), and any handled domain error.
+  initialized at startup — no logging-framework dependency. Every record carries `event`, `level`,
+  `request_id`, and `user_id` (null when unauthenticated); event-specific fields are listed below.
+  One line per request outcome plus explicit events:
+  - `register` — `email_domain` only (never the address or password).
+  - `login_success` / `login_failure` — `user_id` on success; failure carries **no** field that
+    reveals which credential was wrong.
+  - `expense_created` / `expense_updated` — `expense_id`, `category_id`, `budget_warning` (bool;
+    logged at **INFO, not WARNING** — per the assignment's *Budget Alerts*, an exceeded budget is a
+    business-normal outcome surfaced in the `budget_warning` **response field** of the same name, not
+    an operational anomaly; "warning" here is that API field's name, not a log severity).
+  - `category_delete_blocked` — `category_id`, `expense_count`.
+  - `domain_error` — `category` (the FR-034 bucket) and `status`.
 - **Levels**: INFO normal lifecycle, WARNING rejected operations (validation/conflict), ERROR
-  unexpected failures (with stack traces). Records carry the acting `user_id` (when authenticated)
-  and a **request id** from a small ASGI middleware in `main.py`, attached to every record.
+  unexpected failures (with stack traces). The `request_id` originates in a small ASGI middleware
+  in `main.py` and is attached to every record.
 - **Never logged**: passwords, hashes, JWTs, `Authorization` headers, or full request bodies.
-- **Documentation**: concise docstrings (the *why*); the API self-documents via FastAPI's OpenAPI/
+- **Documentation**: concise docstrings (first line = *what* the function does, plus a one-line note
+  per non-trivial argument), with comments reserved for the *why*; the API self-documents via FastAPI's OpenAPI/
   Swagger UI at `/docs`. `README.md` covers run, test, and the **two required design decisions**
   (candidates: sync-over-async, single-currency-per-user, or 404-not-403); `AI_USAGE.md` covers its
   four sections. The gate formally fires during tasks/implementation; its expectations are set here.
@@ -222,6 +238,12 @@ month-window generation, and the date-bound check.
 Edge cases from spec §Edge Cases are folded into the relevant modules. Each behavioral task in
 `tasks.md` pairs with its test task, authored first and observed failing.
 
+**Logging assertions** (`tests/test_logging.py`, via pytest `caplog`/a captured handler): register
+then login and assert the emitted records (a) carry `request_id` and the expected `event`/`user_id`,
+and (b) **never** contain the password, its hash, or the issued token — verifying the "never logged"
+invariant above rather than trusting it. This is the one place log *output* is asserted; everywhere
+else logs are a side effect, not the behavior under test.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -241,10 +263,10 @@ specs/001-expense-tracker-api/
 
 ```text
 app/
-├── main.py             # FastAPI app: logging init, request-id middleware, startup (create tables + seed), routers, handlers
+├── main.py             # FastAPI app + composition root: logging init, request-id middleware, startup (create tables + seed default categories — imports models freely as the top of the dep tree), routers, handlers
 ├── config.py           # pydantic-settings (SECRET_KEY, DATABASE_URL, token TTL, page sizes)
 ├── logging_config.py   # structured JSON logging to stdout
-├── database.py         # Base, engine, SessionLocal, get_db, seed_default_categories
+├── database.py         # Base, engine, SessionLocal, get_db (infrastructure only — no model imports)
 ├── security.py         # bcrypt (+SHA-256 pre-hash) hash/verify; JWT encode/decode; get_current_user
 ├── models.py           # all ORM entities: User, Category, Expense, Budget
 ├── schemas.py          # all Pydantic request/response models (incl. pagination + error shapes)
@@ -265,6 +287,7 @@ tests/
 ├── test_categories.py
 ├── test_budgets.py
 ├── test_reports.py
+├── test_logging.py
 └── test_cli.py
 
 Dockerfile              # API image (slim base, non-root user)
