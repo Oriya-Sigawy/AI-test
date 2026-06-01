@@ -69,22 +69,23 @@ noted because most artifacts are not written yet — produce them in workflow or
 ## Review Gates
 
 Five quality gates govern every change. **A change is not complete until every
-applicable gate has been reviewed and passes.** Each gate has a dedicated skill that
-holds the detailed checklist; the table below is the registry. *When* each gate fires
+applicable gate has been reviewed and passes.** Most gates have a dedicated skill that
+holds the detailed checklist; the Performance gate has no skill and is reviewed manually
+against the checklist below. The table below is the registry. *When* each gate fires
 is defined once, in **Workflow**.
 
 | Gate | Skill | Checks (summary) |
 | --- | --- | --- |
 | Security | `security-skill` | trust boundaries, input validation, authentication, authorization, secrets, sensitive data, OWASP risks (Principle V) |
 | Testing | `testing-skill` | coverage and TDD compliance; tests derive from `plan.md`; edge cases, error handling, return values, independence (Principle III) |
-| Performance | `performance-skill` | acceptable resource and runtime behavior; bottlenecks, expensive operations, large datasets, caching |
+| Performance | *(no skill — reviewed manually)* | acceptable resource and runtime behavior; bottlenecks, expensive operations, large datasets, caching |
 | Logging | `logging-docs-skill` | adequate, useful, consistent, non-sensitive logging that supports debugging and observability |
 | Architecture | `architecture-skill` | alignment with the approved plan and simplicity (Principle IV); separation of concerns, maintainability, no needless abstraction |
 
-**Not every gate skill exists yet.** Built: `testing-skill`, `security-skill`, `logging-docs-skill`.
-Not yet built: `performance-skill`, `architecture-skill`. Until a gate's skill is built,
-perform that gate's review manually against the constitution and the checklist above. Never skip
-a gate because its skill is missing.
+**Not every gate has a skill.** Built: `testing-skill`, `security-skill`, `logging-docs-skill`,
+`architecture-skill`. The **Performance** gate has **no skill by design** — perform its review
+manually against the constitution and the checklist above (on the plan, the tasks, and the code).
+Never skip a gate because it has no skill.
 
 **Documentation is covered by `logging-docs-skill`, not a separate gate;** a final
 documentation-review task is added in `docs/tasks.md`.

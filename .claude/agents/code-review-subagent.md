@@ -40,8 +40,9 @@ as plain files. If missing, review against the constitution and the summary here
    from `plan.md`, validate behavior not implementation, cover edge/error/return cases, and are
    independent and deterministic. TDD ordering isn't provable from a diff — check `git log` that
    tests precede implementation where history exists; otherwise report it unverified, not failing.
-3. **Performance** (`performance-skill`) — bottlenecks, expensive or repeated operations,
-   large-dataset behavior, missing caching, avoidable work.
+3. **Performance** (*no skill — review manually against the constitution and this summary*) —
+   bottlenecks, expensive or repeated operations, large-dataset behavior, missing caching,
+   avoidable work.
 4. **Logging** (`logging-docs-skill`) — adequate, consistent logging that aids debugging; no
    sensitive data logged; documentation updated alongside the code.
 5. **Architecture** (`architecture-skill`, Principle IV) — alignment with `plan.md`, simplicity,
