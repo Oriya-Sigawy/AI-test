@@ -22,7 +22,7 @@ Templates requiring updates:
 Follow-up TODOs: None.
 -->
 
-# learning-AI Constitution
+# AI-assignment Constitution
 
 ## Core Principles
 

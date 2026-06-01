@@ -5,7 +5,7 @@ argument-hint: "Optional path or scope to focus the review (e.g. a module or tas
 compatibility: "Requires spec-kit project structure with .specify/ and a plan.md to derive tests from"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 metadata:
-  author: "learning-AI"
+  author: "AI-assignment"
   gate: "Testing"
 user-invocable: true
 disable-model-invocation: false
