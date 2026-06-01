@@ -32,10 +32,11 @@ esac
 
 cd "$root" 2>/dev/null || exit 0
 
-# Nothing to run until the project exists and has tests.
+# Nothing to run until the project exists, has tests, and the runner is available.
 [ -f pyproject.toml ] || exit 0
 [ -d tests ] || exit 0
 find tests -name '*.py' -print -quit 2>/dev/null | grep -q . || exit 0
+command -v uv >/dev/null 2>&1 || exit 0
 
 out=$(uv run pytest -q 2>&1)
 status=$?
