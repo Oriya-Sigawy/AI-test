@@ -18,6 +18,11 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-tests.sh",
             "statusMessage": "Running tests..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/security-scan.sh",
+            "statusMessage": "Scanning for security issues..."
           }
         ]
       }

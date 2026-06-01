@@ -81,9 +81,10 @@ is defined once, in **Workflow**.
 | Logging | `logging-docs-skill` | adequate, useful, consistent, non-sensitive logging that supports debugging and observability |
 | Architecture | `architecture-skill` | alignment with the approved plan and simplicity (Principle IV); separation of concerns, maintainability, no needless abstraction |
 
-**The skills do not exist yet.** Until a gate's skill is built, perform that gate's
-review manually against the constitution and the checklist above. Never skip a gate
-because its skill is missing.
+**Not every gate skill exists yet.** Built: `testing-skill`, `security-skill`. Not yet built:
+`performance-skill`, `logging-docs-skill`, `architecture-skill`. Until a gate's skill is built,
+perform that gate's review manually against the constitution and the checklist above. Never skip
+a gate because its skill is missing.
 
 **Documentation is covered by `logging-docs-skill`, not a separate gate;** a final
 documentation-review task is added in `docs/tasks.md`.
