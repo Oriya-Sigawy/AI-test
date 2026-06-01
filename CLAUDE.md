@@ -80,8 +80,12 @@ in order; run the listed gates before moving on.
 6. **After Implementation** — before the feature is considered complete:
    1. Confirm every requirement in `requirements.md`/`spec.md` is implemented and that no
       unrequested features were added (Principle I).
-   2. Re-review the code against all five gates; resolve findings.
+   2. Re-review the code by **delegating to the `code-review-subagent`** (`.claude/agents/`): it
+      audits the whole change against **all five gates** (Security, Testing, Performance, Logging,
+      Architecture) in a single independent, fresh-eyes pass in isolated context. Resolve its
+      findings. The subagent is advisory and never approves — the developer gives final acceptance.
 
-   The task generator SHOULD emit a final review task in `tasks.md`, but the requirement
-   to perform this review lives here, not in `tasks.md`.
+   This Step-6 subagent pass is distinct from the Step-5 gates, which the main agent applies
+   inline per task. The task generator SHOULD emit a final review task in `tasks.md`, but the
+   requirement to perform this review lives here, not in `tasks.md`.
 
