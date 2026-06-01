@@ -29,10 +29,11 @@ findings tied to it.
 
 ## The five gates
 
-For each gate, look for its skill at `.claude/skills/<skill-name>/SKILL.md` using the **exact** name
-in parentheses below (not all follow `<gate>-skill` — Logging's is `logging-docs-skill`). If present,
+For each gate that has a skill, look for it at `.claude/skills/<skill-name>/SKILL.md` using the **exact**
+name in parentheses below (not all follow `<gate>-skill` — Logging's is `logging-docs-skill`). If present,
 **Read** it and use its checklist as the source of truth — you have no Skill tool, so consume skills
-as plain files. If missing, review against the constitution and the summary here. **Never skip a gate.**
+as plain files. The **Performance** gate has no skill by design; review it manually against the
+constitution and the summary here. If a skill is missing, do the same. **Never skip a gate.**
 
 1. **Security** (`security-skill`, Principle V) — trust boundaries, input validation, auth(z),
    secrets handling, sensitive-data exposure, OWASP risks.

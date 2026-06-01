@@ -93,8 +93,9 @@ a proposed slot.
    reviewer that can't be biased by the implementation reasoning.
 
 2. **The subagent consumes skills as files, not as tools.** It has only `Read, Grep,
-   Glob, Bash` — no Skill tool — so it `Read`s each `SKILL.md` to reuse the *same
-   checklists* the main agent used. One source of truth, two consumption modes.
+   Glob, Bash` — no Skill tool — so it `Read`s each available `SKILL.md` to reuse the *same
+   checklists* the main agent used (Performance has no skill, so it reviews that gate manually
+   against the constitution). One source of truth, two consumption modes.
 
 3. **Hooks are pushed by the harness, not pulled by anyone.** No skill or agent ever
    "calls" a hook; they fire on tool/session events and feed text back to the main agent.
