@@ -1,0 +1,14 @@
+[project]
+name = "expense-tracker"
+version = "0.1.0"
+description = "REST API for a personal expense tracking application."
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
