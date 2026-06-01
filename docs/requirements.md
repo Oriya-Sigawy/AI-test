@@ -73,7 +73,7 @@ Monthly budgets per category:
 ### Expense
 - Unique identifier
 - Amount (decimal)
-- Currency
+- Currency (always the owner's default currency — see §4.3; not client-settable per expense)
 - Category relationship
 - Date of expense
 - Description (optional)
@@ -94,8 +94,11 @@ Monthly budgets per category:
 
 ### 4.1 Budget Alerts
 When creating an expense, check whether the user exceeds the budget for that category
-in the current month. If exceeded, include a `budget_warning` in the response alongside
-the created expense, containing: `category`, `budget`, `spent`, `exceeded_by`.
+in **the month of the expense's date** (not the actual current calendar month — this keeps
+the check coherent with back-dated and future-dated expenses, see Edge Cases 2 and 3).
+If exceeded, include a `budget_warning` in the response alongside the created expense,
+containing: `category`, `budget`, `spent`, `exceeded_by`. "Spent" is the sum of expenses
+in that category for that same month.
 
 ### 4.2 Category Deletion
 - Cannot delete a category that has expenses associated with it.
@@ -103,8 +106,11 @@ the created expense, containing: `category`, `budget`, `spent`, `exceeded_by`.
 - Suggest moving expenses to another category first.
 
 ### 4.3 Currency Handling
+- **Single currency per user.** Every expense is stored in the user's default currency.
+  The API does **not** accept a per-expense currency on input; an expense's currency always
+  equals the owner's default currency at creation time.
 - Store amounts in the user's default currency.
-- Reports present all amounts in the user's default currency.
+- Reports present all amounts in the user's default currency (so reports never mix currencies).
 - Currency conversion is **out of scope** (not required).
 
 ---
