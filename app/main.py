@@ -21,7 +21,7 @@ from app.database import Base, SessionLocal, engine
 from app.errors import install_error_handlers
 from app.logging_config import configure_logging, request_id_var
 from app.models import Category
-from app.routers import auth
+from app.routers import auth, categories, expenses
 
 logger = logging.getLogger(__name__)
 
@@ -92,3 +92,5 @@ install_error_handlers(app)
 
 # Resource routers are registered here as they are added.
 app.include_router(auth.router)
+app.include_router(categories.router)
+app.include_router(expenses.router)
