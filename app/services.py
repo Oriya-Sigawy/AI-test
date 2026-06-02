@@ -185,6 +185,10 @@ def create_category(db: Session, user: User, data: CategoryCreate) -> Category:
         db.rollback()
         raise Conflict(f"A category named '{data.name}' already exists") from exc
     db.refresh(category)
+    logger.info(
+        "category created",
+        extra={"event": "category_created", "user_id": user.id, "category_id": category.id},
+    )
     return category
 
 
@@ -211,6 +215,10 @@ def update_category(db: Session, user: User, category_id: int, data: CategoryUpd
         db.rollback()
         raise Conflict(f"A category named '{data.name}' already exists") from exc
     db.refresh(category)
+    logger.info(
+        "category updated",
+        extra={"event": "category_updated", "user_id": user.id, "category_id": category.id},
+    )
     return category
 
 
@@ -239,6 +247,10 @@ def delete_category(db: Session, user: User, category_id: int) -> None:
         )
     db.delete(category)  # budgets referencing it are removed by the FK ON DELETE CASCADE
     db.commit()
+    logger.info(
+        "category deleted",
+        extra={"event": "category_deleted", "user_id": user.id, "category_id": category_id},
+    )
 
 
 # --- Expenses -------------------------------------------------------------------------
@@ -389,6 +401,10 @@ def delete_expense(db: Session, user: User, expense_id: int) -> None:
     expense = get_expense(db, user, expense_id)
     db.delete(expense)
     db.commit()
+    logger.info(
+        "expense deleted",
+        extra={"event": "expense_deleted", "user_id": user.id, "expense_id": expense_id},
+    )
 
 
 # --- Budgets --------------------------------------------------------------------------
@@ -473,6 +489,15 @@ def set_budget(db: Session, user: User, data: BudgetUpsert) -> Budget:
     ).returning(Budget.id)
     budget_id = db.scalar(upsert)
     db.commit()
+    logger.info(
+        "budget set",
+        extra={
+            "event": "budget_set",
+            "user_id": user.id,
+            "budget_id": budget_id,
+            "category_id": category.id,
+        },
+    )
     return db.scalar(
         select(Budget).where(Budget.id == budget_id).options(selectinload(Budget.category))
     )
@@ -503,6 +528,10 @@ def delete_budget(db: Session, user: User, budget_id: int) -> None:
         raise NotFound("Budget not found")
     db.delete(budget)
     db.commit()
+    logger.info(
+        "budget deleted",
+        extra={"event": "budget_deleted", "user_id": user.id, "budget_id": budget_id},
+    )
 
 
 # --- Reports --------------------------------------------------------------------------

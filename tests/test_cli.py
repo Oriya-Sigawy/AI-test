@@ -10,6 +10,8 @@ proves the commands wire request bodies, the persisted bearer token, and respons
 together correctly.
 """
 
+import stat
+
 import pytest
 from typer.testing import CliRunner
 
@@ -91,3 +93,20 @@ def test_register_login_expense_roundtrip(cli_env):
     assert "Food" in listed.output
     assert "lunch" in listed.output
     assert "(1 total, showing 1)" in listed.output
+
+
+def test_login_writes_token_file_readable_only_by_owner(cli_env):
+    """The saved bearer token is a credential, so its file must be owner-only (0o600) from the
+    moment it is created — never briefly world-readable under the default umask."""
+    token_file = cli_env
+
+    runner.invoke(
+        cli.app,
+        ["register", "--email", _EMAIL, "--display-name", "CLI User", "--currency", "usd",
+         "--password", _PW],
+    )
+    logged_in = runner.invoke(cli.app, ["login", "--email", _EMAIL, "--password", _PW])
+    assert logged_in.exit_code == 0, logged_in.output
+
+    mode = stat.S_IMODE(token_file.stat().st_mode)
+    assert mode == 0o600, f"token file mode is {oct(mode)}, expected 0o600"

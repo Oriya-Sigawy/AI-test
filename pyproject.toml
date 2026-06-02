@@ -26,3 +26,9 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Volume/load tests create large datasets and are slower than the behavioral suite, so they
+# are opt-in: the default run excludes them; run them with `pytest -m slow`.
+markers = [
+    "slow: volume/load test over a large dataset; deselected by default, run via -m slow",
+]
+addopts = "-m 'not slow'"
