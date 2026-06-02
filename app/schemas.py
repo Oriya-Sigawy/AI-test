@@ -16,8 +16,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PlainSerializer,
     computed_field,
-    field_serializer,
     field_validator,
     model_serializer,
 )
@@ -41,6 +41,12 @@ def _normalize_currency(value: str) -> str:
     if not (len(value) == 3 and value.isascii() and value.isalpha()):
         raise ValueError("must be exactly three letters")
     return value
+
+
+# Every money amount a response returns is rendered as a fixed two-decimal JSON string (e.g.
+# "42.50") so a client's float round-trip can't perturb the value (SC-006). The rule is defined
+# once here and applied by typing each output amount field as ``MoneyOut``.
+MoneyOut = Annotated[Decimal, PlainSerializer(lambda value: f"{value:.2f}", return_type=str)]
 
 
 class Page(BaseModel, Generic[ItemT]):
@@ -362,7 +368,7 @@ class ExpenseResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    amount: Decimal
+    amount: MoneyOut
     currency: str
     category: CategoryRef
     date: dt.date
@@ -370,11 +376,6 @@ class ExpenseResponse(BaseModel):
     receipt_url: str | None
     created_at: dt.datetime
     updated_at: dt.datetime
-
-    @field_serializer("amount")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render the amount with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
 
 
 class BudgetWarning(BaseModel):
@@ -386,14 +387,9 @@ class BudgetWarning(BaseModel):
     """
 
     category_name: str
-    budget: Decimal
-    spent: Decimal
-    exceeded_by: Decimal
-
-    @field_serializer("budget", "spent", "exceeded_by")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render each amount with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
+    budget: MoneyOut
+    spent: MoneyOut
+    exceeded_by: MoneyOut
 
 
 class ExpenseWriteResponse(ExpenseResponse):
@@ -467,14 +463,9 @@ class BudgetResponse(BaseModel):
 
     id: int
     category: CategoryRef
-    amount: Decimal
+    amount: MoneyOut
     month: int
     year: int
-
-    @field_serializer("amount")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render the amount with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
 
 
 # --- Reports --------------------------------------------------------------------------
@@ -484,12 +475,7 @@ class CategoryTotal(BaseModel):
     """One category's total spend within a monthly summary; the amount serializes as a string."""
 
     category: CategoryRef
-    total: Decimal
-
-    @field_serializer("total")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render the total with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
+    total: MoneyOut
 
 
 class MonthlySummaryResponse(BaseModel):
@@ -497,13 +483,8 @@ class MonthlySummaryResponse(BaseModel):
 
     month: int
     year: int
-    total: Decimal
+    total: MoneyOut
     by_category: list[CategoryTotal]
-
-    @field_serializer("total")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render the total with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
 
 
 class TrendMonth(BaseModel):
@@ -511,12 +492,7 @@ class TrendMonth(BaseModel):
 
     year: int
     month: int
-    total: Decimal
-
-    @field_serializer("total")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render the total with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
+    total: MoneyOut
 
 
 class TrendResponse(BaseModel):
@@ -532,14 +508,9 @@ class BudgetStatusRow(BaseModel):
     """
 
     category: CategoryRef
-    budget: Decimal
-    spent: Decimal
-    remaining: Decimal
-
-    @field_serializer("budget", "spent", "remaining")
-    def _serialize_amount(self, value: Decimal) -> str:
-        """Render each amount with exactly two decimals as a string to preserve precision."""
-        return f"{value:.2f}"
+    budget: MoneyOut
+    spent: MoneyOut
+    remaining: MoneyOut
 
 
 class BudgetStatusResponse(BaseModel):

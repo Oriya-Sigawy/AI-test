@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.config import DEFAULT_CATEGORIES
+from app.config import DEFAULT_CATEGORIES, settings
 from app.database import Base, SessionLocal, engine
 from app.errors import install_error_handlers
 from app.logging_config import configure_logging, request_id_var
@@ -86,7 +86,23 @@ class RequestIdMiddleware:
         await self.app(scope, receive, send)
 
 
-app = FastAPI(title="Personal Expense Tracker API", version="0.1.0", lifespan=lifespan)
+def _docs_urls(enabled: bool) -> dict[str, str | None]:
+    """Return the docs/redoc/OpenAPI URL kwargs for ``FastAPI(...)``.
+
+    When docs are disabled all three are ``None``, so a hardened deployment serves neither the
+    interactive consoles (``/docs``, ``/redoc``) nor the schema (``/openapi.json``) — OWASP A05.
+    """
+    if not enabled:
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
+app = FastAPI(
+    title="Personal Expense Tracker API",
+    version="0.1.0",
+    lifespan=lifespan,
+    **_docs_urls(settings.enable_docs),
+)
 app.add_middleware(RequestIdMiddleware)
 install_error_handlers(app)
 
