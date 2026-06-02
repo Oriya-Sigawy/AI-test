@@ -45,8 +45,11 @@ def paginate(db: Session, stmt: Select, limit: int, offset: int) -> tuple[list, 
 
     Shared by every list endpoint so the limit/offset/count shape is defined once.
     stmt: a SELECT already filtered and ordered; ``limit``/``offset`` bound the page returned.
+    The count drops the statement's ordering (``order_by(None)``) — a count is order-independent,
+    so sorting inside the counted subquery would be wasted work. ``order_by(None)`` returns a new
+    statement, so the page query below still uses the original ordering.
     """
-    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    total = db.scalar(select(func.count()).select_from(stmt.order_by(None).subquery())) or 0
     items = list(db.scalars(stmt.limit(limit).offset(offset)).all())
     return items, total
 
