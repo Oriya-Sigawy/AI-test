@@ -22,7 +22,7 @@ simplicity choices (Principle IV) that keep every line explainable at the follow
 **Language/Version**: Python 3.11+ (developed on 3.12)
 
 **Primary Dependencies**: FastAPI · Uvicorn (ASGI) · Pydantic v2 + pydantic-settings · SQLAlchemy
-2.0 (**sync**) · psycopg 3 · PyJWT · passlib[bcrypt] · Typer + httpx (CLI). Dev: pytest (+ httpx
+2.0 (**sync**) · psycopg 3 · PyJWT · bcrypt · Typer + httpx (CLI). Dev: pytest (+ httpx2
 `TestClient`), bandit (in `pyproject.toml`).
 
 **Storage**: PostgreSQL 16 (relational, required). Schema created at startup via
@@ -146,12 +146,15 @@ the key `category` (the nested category object used everywhere else in the contr
 - **Auth tokens**: JWT signed HS256 with `SECRET_KEY` from env; short expiry (configurable,
   default 60 min); `sub` = user id, encoded/decoded as a **string** (PyJWT round-trips `sub` as a
   string; the integer id is `str()`-cast on encode, parsed back on decode).
-- **Passwords**: bcrypt via passlib, pre-hashed as `base64(sha256(password))` before bcrypt — this
-  defeats bcrypt's 72-byte truncation, and base64 (rather than the raw 32-byte digest, which can
-  contain a `0x00` that bcrypt's C-string handling would truncate on) yields 44 null-free ASCII
-  chars, so the full 8–128 range stays meaningful. Only the salted hash is persisted; never
-  returned (response schemas exclude it), never logged. **Pin** `passlib==1.7.4` with `bcrypt<4.1`
-  (1.7.4 reads `bcrypt.__about__`, removed in ≥4.1 → the well-known `AttributeError`).
+- **Passwords**: hashed with the **`bcrypt` library directly** (no passlib wrapper), pre-hashed as
+  `base64(sha256(password))` before bcrypt — this defeats bcrypt's 72-byte truncation, and base64
+  (rather than the raw 32-byte digest, which can contain a `0x00` that bcrypt's C-string handling
+  would truncate on) yields 44 null-free ASCII chars, so the full 8–128 range stays meaningful.
+  Only the salted hash is persisted; never returned (response schemas exclude it), never logged.
+  Calling `bcrypt` directly (rather than `passlib[bcrypt]`) drops two version pins that existed only
+  to work around passlib — it reads `bcrypt.__about__` (removed in bcrypt ≥4.1 → `AttributeError`)
+  and imports the stdlib `crypt` module (removed in Python 3.13) — so the single-scheme dependency
+  stays current and 3.13-safe (Principle IV).
 - **Login**: one generic failure message; no email-existence disclosure (FR-004). Registration
   knowingly discloses duplicate email (accepted tradeoff, spec Assumptions). **Rate limiting /
   brute-force protection is intentionally out of scope** — a proxy-layer concern, a decision not an

@@ -15,10 +15,10 @@ import datetime as dt
 import hashlib
 import logging
 
+import bcrypt
 import jwt
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -29,7 +29,6 @@ from app.models import User
 
 logger = logging.getLogger(__name__)
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _JWT_ALGORITHM = "HS256"
 
 # auto_error=False: a missing or non-bearer Authorization header yields None here (not a
@@ -45,12 +44,12 @@ def _prehash(password: str) -> str:
 
 def hash_password(password: str) -> str:
     """Return a salted bcrypt hash of the password, safe to persist."""
-    return _pwd_context.hash(_prehash(password))
+    return bcrypt.hashpw(_prehash(password).encode("ascii"), bcrypt.gensalt()).decode("ascii")
 
 
 def verify_password(password: str, password_hash: str) -> bool:
     """Report whether the password matches the stored hash."""
-    return _pwd_context.verify(_prehash(password), password_hash)
+    return bcrypt.checkpw(_prehash(password).encode("ascii"), password_hash.encode("ascii"))
 
 
 def create_access_token(user_id: int) -> str:

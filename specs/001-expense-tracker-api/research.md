@@ -48,16 +48,17 @@ the behavioral unknowns; this file settles the *technical* ones.
 
 - **Decision**: Bearer JWT signed HS256 with an env `SECRET_KEY`, short configurable expiry,
   `sub` = user id (encoded as a **string** — PyJWT validates `sub` as a string); passwords hashed
-  with bcrypt via passlib. **No token revocation or refresh** — invalidation is by short expiry only
+  with the **`bcrypt` library directly**. **No token revocation or refresh** — invalidation is by short expiry only
   (a deliberate consequence of choosing stateless tokens over a server-side session store).
 - **Rationale**: Satisfies the spec's security item that tokens be integrity-protected and
   expiring (not forgeable opaque strings) with no server-side session store. bcrypt is the
   well-understood, salted, slow password hash. Both are interview-defensible.
 - **bcrypt gotchas** (decided on purpose): bcrypt **silently truncates input at 72 bytes**, so
   passwords are pre-hashed as `base64(sha256(password))` before bcrypt (base64, not the raw digest,
-  to avoid an embedded `0x00` re-truncating). passlib 1.7.4 (its last release) raises
-  `module 'bcrypt' has no attribute '__about__'` against bcrypt ≥ 4.1, so **pin `bcrypt < 4.1`**
-  (using the `bcrypt` library directly instead of passlib is the alternative that sidesteps this).
+  to avoid an embedded `0x00` re-truncating). We call the **`bcrypt` library directly rather than
+  `passlib`**: passlib 1.7.4 (its last release) reads `bcrypt.__about__` (raising `AttributeError`
+  against bcrypt ≥ 4.1) and imports the stdlib `crypt` module (removed in Python 3.13) — using
+  `bcrypt` directly avoids both, needs no version pin, and stays 3.13-safe.
 - **Alternatives**: opaque DB session tokens (needs a store + revocation; more moving parts);
   argon2 (excellent, no 72-byte limit, but bcrypt is more universally recognized and sufficient
   here); RS256 (asymmetric keys unnecessary for a single service).

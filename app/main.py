@@ -21,6 +21,7 @@ from app.database import Base, SessionLocal, engine
 from app.errors import install_error_handlers
 from app.logging_config import configure_logging, request_id_var
 from app.models import Category
+from app.routers import auth
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,5 @@ app = FastAPI(title="Personal Expense Tracker API", version="0.1.0", lifespan=li
 app.add_middleware(RequestIdMiddleware)
 install_error_handlers(app)
 
-# Resource routers are registered here as they are added, e.g.:
-#   from app.routers import auth
-#   app.include_router(auth.router)
+# Resource routers are registered here as they are added.
+app.include_router(auth.router)
