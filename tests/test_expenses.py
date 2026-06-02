@@ -196,9 +196,11 @@ def test_list_expenses_paginates_with_metadata(client, auth_headers, food_catego
     first = client.get("/expenses", params={"limit": 2, "offset": 0}, headers=auth_headers).json()
     assert first["total"] == 3 and first["limit"] == 2 and first["offset"] == 0
     assert len(first["items"]) == 2
+    assert first["count"] == 2  # items returned on this page (a full page)
 
     second = client.get("/expenses", params={"limit": 2, "offset": 2}, headers=auth_headers).json()
     assert second["total"] == 3 and len(second["items"]) == 1
+    assert second["count"] == 1  # last, partial page: fewer than the limit
 
 
 @pytest.mark.parametrize(

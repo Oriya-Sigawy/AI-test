@@ -16,6 +16,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    computed_field,
     field_serializer,
     field_validator,
     model_serializer,
@@ -47,12 +48,20 @@ class Page(BaseModel, Generic[ItemT]):
 
     Wraps one page of ``items`` with the metadata needed to page through the rest:
     the ``total`` number of matching rows and the ``limit``/``offset`` used for this page.
+    ``count`` is how many items this page actually carries — equal to ``limit`` for a full
+    page, fewer on the last page.
     """
 
     items: list[ItemT]
     total: int
     limit: int
     offset: int
+
+    @computed_field
+    @property
+    def count(self) -> int:
+        """Number of items returned on this page (``<= limit``); derived from ``items``."""
+        return len(self.items)
 
 
 class PaginationParams:

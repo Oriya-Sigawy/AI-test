@@ -226,9 +226,9 @@ def test_list_budgets_paginates_with_metadata(client, auth_headers, food_categor
         _put_budget(client, auth_headers, food_category_id, month=month, year=2026)
 
     first = client.get("/budgets", params={"limit": 2, "offset": 0}, headers=auth_headers).json()
-    assert first.keys() == {"items", "total", "limit", "offset"}
+    assert first.keys() == {"items", "total", "limit", "offset", "count"}
     assert first["total"] == 3 and first["limit"] == 2 and first["offset"] == 0
-    assert len(first["items"]) == 2
+    assert len(first["items"]) == 2 and first["count"] == 2
 
 
 @pytest.mark.parametrize(

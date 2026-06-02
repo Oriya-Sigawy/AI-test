@@ -183,9 +183,14 @@ def expense_add(
     typer.echo(f"Added expense {body['id']}: {body['amount']} {body['currency']} on {body['date']}.")
     warning = body.get("budget_warning")
     if warning:
+        # Tint the over-budget warning red; typer.echo strips the codes automatically when output
+        # is not a terminal (piped/redirected), so this stays scripting-safe.
         typer.echo(
-            f"  Budget exceeded for {warning['category_name']}: "
-            f"spent {warning['spent']} of {warning['budget']} (over by {warning['exceeded_by']})."
+            typer.style(
+                f"  Budget exceeded for {warning['category_name']}: "
+                f"spent {warning['spent']} of {warning['budget']} (over by {warning['exceeded_by']}).",
+                fg=typer.colors.RED,
+            )
         )
 
 

@@ -94,11 +94,12 @@ def test_list_orders_system_first_then_name_ascending(client, auth_headers):
 def test_list_returns_pagination_metadata(client, auth_headers):
     """The list endpoint returns the page envelope with total/limit/offset and a capped item count."""
     body = client.get("/categories?limit=5&offset=0", headers=auth_headers).json()
-    assert body.keys() == {"items", "total", "limit", "offset"}
+    assert body.keys() == {"items", "total", "limit", "offset", "count"}
     assert body["total"] == 7
     assert body["limit"] == 5
     assert body["offset"] == 0
     assert len(body["items"]) == 5  # bounded by limit
+    assert body["count"] == 5  # items on this page, capped by limit
 
 
 @pytest.mark.parametrize(
