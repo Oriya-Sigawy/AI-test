@@ -286,7 +286,10 @@ app/
     ├── budgets.py
     └── reports.py
 
-cli.py                  # Typer + httpx client (run: `python -m cli`): register, login, expense add/list, report
+cli/                    # Typer + httpx client (run: `python -m cli`)
+├── __init__.py         # commands: register, login, category add, expense add/list, report monthly
+├── __main__.py         # `python -m cli` entry point → cli.app
+└── README.md           # CLI usage (two-terminal: run the API, then the client)
 tests/
 ├── conftest.py         # fixtures: db_session, client, auth_headers, second_user
 ├── test_auth.py
@@ -305,7 +308,7 @@ AI_USAGE.md             # required four sections (deliverable)
 ```
 
 **Structure Decision**: One flat `app/` package — a module per concern, with `models.py` and
-`schemas.py` each holding all four entities — plus a `routers/` subpackage, a top-level `cli.py`,
+`schemas.py` each holding all four entities — plus a `routers/` subpackage, a `cli/` client package,
 and a `tests/` suite. Routers handle HTTP, `services.py` holds business logic, `models.py`
 persistence: three responsibilities, testable without a deep tree (~15 files, not ~30). No
 backend/frontend split (no web UI) and no repository layer.

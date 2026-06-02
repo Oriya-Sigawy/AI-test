@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     max_page_size: int = 100
     """Upper bound on ``limit`` for any list endpoint."""
 
+    enable_docs: bool = True
+    """Whether to serve the interactive docs and OpenAPI schema. Turn off in a hardened
+    deployment so it exposes neither ``/docs``/``/redoc`` nor ``/openapi.json`` (OWASP A05)."""
+
 
 settings = Settings()
 """Shared settings instance, imported wherever configuration is needed."""

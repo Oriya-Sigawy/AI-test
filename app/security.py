@@ -52,6 +52,12 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(_prehash(password).encode("ascii"), password_hash.encode("ascii"))
 
 
+# A valid bcrypt hash of an arbitrary string, computed once at import. Login verifies against
+# this when the supplied email matches no account, so an unknown email costs the same bcrypt
+# work as a wrong password — closing the user-enumeration timing side-channel (OWASP A07).
+DUMMY_PASSWORD_HASH = hash_password("constant-time-login-placeholder")
+
+
 def create_access_token(user_id: int) -> str:
     """Return a signed JWT identifying the user, expiring after the configured TTL.
 

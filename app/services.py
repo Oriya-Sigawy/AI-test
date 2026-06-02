@@ -35,7 +35,7 @@ from app.schemas import (
     UserUpdate,
 )
 
-from app.security import hash_password, verify_password
+from app.security import DUMMY_PASSWORD_HASH, hash_password, verify_password
 
 logger = logging.getLogger(__name__)
 
@@ -84,11 +84,15 @@ def authenticate_user(db: Session, data: LoginRequest) -> User:
     """Return the user matching the login credentials, or raise ``Unauthenticated``.
 
     An unknown email and a wrong password fail identically (one generic 401), so the response
-    never reveals whether an email is registered. The failure log carries no field that would
-    reveal which credential was wrong.
+    never reveals whether an email is registered. To keep that true of *response time* as well,
+    an unknown email still runs a bcrypt verify against ``DUMMY_PASSWORD_HASH`` — so the work done
+    is the same either way and timing can't be used to enumerate accounts (OWASP A07). The failure
+    log carries no field that would reveal which credential was wrong.
     """
     user = db.scalar(select(User).where(func.lower(User.email) == data.email))
-    if user is None or not verify_password(data.password, user.password_hash):
+    password_hash = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
+    password_ok = verify_password(data.password, password_hash)
+    if user is None or not password_ok:
         logger.warning("login failed", extra={"event": "login_failure"})
         raise Unauthenticated("Invalid email or password")
     logger.info("login succeeded", extra={"event": "login_success", "user_id": user.id})

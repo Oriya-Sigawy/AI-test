@@ -10,6 +10,7 @@ proves the commands wire request bodies, the persisted bearer token, and respons
 together correctly.
 """
 
+import os
 import stat
 
 import pytest
@@ -95,17 +96,26 @@ def test_register_login_expense_roundtrip(cli_env):
     assert "(1 total, showing 1)" in listed.output
 
 
-def test_login_writes_token_file_readable_only_by_owner(cli_env):
-    """The saved bearer token is a credential, so its file must be owner-only (0o600) from the
-    moment it is created — never briefly world-readable under the default umask."""
-    token_file = cli_env
+def test_login_writes_token_file_readable_only_by_owner(cli_env, monkeypatch):
+    """The saved bearer token is a credential: its file must be owner-only (0o600) by virtue of
+    how it is created, not a follow-up ``chmod`` that leaves a brief world-readable window.
 
-    runner.invoke(
-        cli.app,
-        ["register", "--email", _EMAIL, "--display-name", "CLI User", "--currency", "usd",
-         "--password", _PW],
-    )
-    logged_in = runner.invoke(cli.app, ["login", "--email", _EMAIL, "--password", _PW])
+    To prove the permissions don't depend on that post-write ``chmod``, we neutralize it and set a
+    permissive umask — a non-atomic ``write_text`` then would leave the token group/world-readable
+    and fail, while an atomic owner-only create still yields 0o600.
+    """
+    token_file = cli_env
+    monkeypatch.setattr(os, "chmod", lambda *args, **kwargs: None)
+    previous_umask = os.umask(0o022)
+    try:
+        runner.invoke(
+            cli.app,
+            ["register", "--email", _EMAIL, "--display-name", "CLI User", "--currency", "usd",
+             "--password", _PW],
+        )
+        logged_in = runner.invoke(cli.app, ["login", "--email", _EMAIL, "--password", _PW])
+    finally:
+        os.umask(previous_umask)
     assert logged_in.exit_code == 0, logged_in.output
 
     mode = stat.S_IMODE(token_file.stat().st_mode)

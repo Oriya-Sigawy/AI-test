@@ -51,6 +51,20 @@ def _load_token() -> str:
     return path.read_text().strip()
 
 
+def _write_token(path: Path, token: str) -> None:
+    """Persist the bearer token to ``path``, readable only by its owner.
+
+    The token is a credential, so the file is *created* with mode 0o600 via ``os.open`` rather
+    than written and then ``chmod``-ed — the latter would leave it briefly world-readable under
+    the usual umask. The trailing ``chmod`` only tightens a file that already existed with looser
+    permissions (e.g. one written by an older version).
+    """
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as token_file:
+        token_file.write(token)
+    os.chmod(path, 0o600)
+
+
 def _request(
     method: str,
     path: str,
@@ -140,8 +154,7 @@ def login(
     """Log in and persist the bearer token locally for the authenticated commands."""
     response = _request("POST", "/auth/login", json={"email": email, "password": password})
     path = _token_file()
-    path.write_text(response.json()["access_token"])
-    os.chmod(path, 0o600)  # the token is a credential — keep it readable only by its owner
+    _write_token(path, response.json()["access_token"])
     typer.echo("Logged in; token saved.")
 
 

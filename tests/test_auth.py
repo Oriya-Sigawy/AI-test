@@ -127,6 +127,31 @@ def test_login_failure_does_not_reveal_which_credential_was_wrong(client):
     assert wrong_password_resp.json()["message"] == unknown_email_resp.json()["message"]
 
 
+def test_login_unknown_email_still_runs_password_verification(client, monkeypatch):
+    """An unknown email triggers a bcrypt verify too, so response time can't distinguish it from a
+    wrong password — closing the user-enumeration timing side-channel (OWASP A07).
+
+    Asserted by behavior, not wall-clock: ``verify_password`` must be called exactly once, against
+    the dummy hash, even though no account matches the email.
+    """
+    import app.services as services
+
+    real_verify = services.verify_password
+    seen_hashes: list[str] = []
+    monkeypatch.setattr(
+        services,
+        "verify_password",
+        lambda password, password_hash: seen_hashes.append(password_hash)
+        or real_verify(password, password_hash),
+    )
+
+    resp = client.post(
+        "/auth/login", json={"email": "ghost@example.com", "password": _VALID_PASSWORD}
+    )
+    assert resp.status_code == 401
+    assert seen_hashes == [services.DUMMY_PASSWORD_HASH]
+
+
 # --- Token-protected access -----------------------------------------------------------
 
 
@@ -274,6 +299,28 @@ def test_unhandled_error_returns_generic_500_and_logs_server_side(boom_route, ca
         getattr(record, "event", None) == "domain_error" and record.levelno == logging.ERROR
         for record in caplog.records
     )
+
+
+# --- Cross-cutting: interactive API docs gating (OWASP A05) ---------------------------
+
+
+def test_docs_are_served_by_default(client):
+    """With the default configuration the interactive docs and schema are reachable."""
+    assert client.get("/docs").status_code == 200
+    assert client.get("/openapi.json").status_code == 200
+
+
+def test_docs_can_be_disabled():
+    """Turning docs off removes ``/docs``, ``/redoc`` and ``/openapi.json`` (404), so a hardened
+    deployment need not expose its schema or interactive console (OWASP A05)."""
+    from fastapi import FastAPI
+
+    from app.main import _docs_urls
+
+    disabled = TestClient(FastAPI(**_docs_urls(enabled=False)))
+    assert disabled.get("/docs").status_code == 404
+    assert disabled.get("/redoc").status_code == 404
+    assert disabled.get("/openapi.json").status_code == 404
 
 
 # --- Unit: security helpers (pure functions) ------------------------------------------
