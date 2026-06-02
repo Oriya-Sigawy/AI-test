@@ -14,8 +14,8 @@ file=$(python3 -c 'import sys,json; print(json.load(sys.stdin).get("tool_input",
 # React to Python (secrets + bandit) and to config likely to hold secrets (secrets only).
 # .env is intentionally excluded — it's the designated local secret store, so flagging it is noise.
 case "$file" in
-  *src/*.py|*tests/*.py)             is_py=1 ;;
-  *compose*.y*ml|*Dockerfile*|*.ini) is_py=0 ;;
+  */app/*.py|*/tests/*.py|*/cli.py|cli.py) is_py=1 ;;
+  *compose*.y*ml|*Dockerfile*|*.ini)       is_py=0 ;;
   *) exit 0 ;;
 esac
 cd "$root" 2>/dev/null || exit 0
