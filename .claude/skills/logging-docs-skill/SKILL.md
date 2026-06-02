@@ -1,6 +1,6 @@
 ---
 name: "logging-docs-skill"
-description: "Enforce the Logging & Documentation gate. Use after tasks.md is generated (logging/docs captured), when code is written or changed (Step 5.4 and the whole change at Step 6), and when README.md / AI_USAGE.md are produced or reviewed. Covers docstrings, diagnosable non-sensitive logs, and the README/AI_USAGE deliverables. Read-only — surfaces findings, never edits or approves."
+description: "Enforce the Logging & Documentation gate. Use after tasks.md is generated (logging/docs captured), when code is written or changed (Step 5.4 and the whole change at Step 6), and when README.md / AI_USAGE.md are produced or reviewed. Covers minimal, purposeful documentation (docstrings), diagnosable non-sensitive logs, and the README/AI_USAGE deliverables. Read-only — surfaces findings, never edits or approves."
 argument-hint: "Optional path or scope to focus the review (e.g. a file, module, or task ID)"
 compatibility: "Requires spec-kit project structure with .specify/ and the docs/ artifacts to review against"
 allowed-tools: ["Read", "Grep", "Glob"]
@@ -13,12 +13,15 @@ disable-model-invocation: false
 
 ## Purpose
 
-Enforce the **Logging & Documentation** gate (no separate docs gate). Three things must hold:
-**code docs** — every public function carries a short docstring saying what it does, plus a one-line
-note for each non-trivial argument; **logging** — logs help diagnose problems, never carry sensitive
-data, and stay useful and concise; and the **doc deliverables** — `README.md` and `AI_USAGE.md`
-exist and contain their required structure. Run only the mode for the current phase; each returns
-**PASS** or **CHANGES NEEDED** plus the specific finding and fix.
+Enforce the **Logging & Documentation** gate (no separate docs gate). Documentation MUST be
+**minimal and purposeful** (constitution Principle VII): it earns its place only where it helps a
+reader understand something the code does not already make obvious — over-documentation is itself a
+finding. Three things must hold: **code docs** — every public function carries a short docstring
+saying what it does, plus a one-line note for each non-trivial argument, and nothing more; **logging**
+— logs help diagnose problems, never carry sensitive data, and stay useful and concise; and the **doc
+deliverables** — `README.md` and `AI_USAGE.md` exist, contain their required structure, and stay
+concise. Run only the mode for the current phase; each returns **PASS** or **CHANGES NEEDED** plus the
+specific finding and fix.
 
 This gate **surfaces findings; it does not self-approve.** It is advisory — the developer resolves
 the findings and gives final acceptance.
@@ -52,6 +55,9 @@ the findings and gives final acceptance.
 - [ ] Each **non-trivial argument** (unit, format, constraint, or non-obvious meaning) gets a one-line note.
 - [ ] The docstring is **short** — no restating the signature, no line-by-line narration of the body.
 - [ ] Comments explain **why**, not what; no commented-out code or stale comments left behind.
+- [ ] **Minimal & purposeful** (Principle VII) — documentation exists only where it adds value the
+      code does not already convey; flag any doc/comment/file that restates the code, duplicates
+      another document, or was not requested. Over-documentation is a finding, not a courtesy.
 
 **Logging**
 
@@ -73,6 +79,8 @@ the findings and gives final acceptance.
 - [ ] `AI_USAGE.md` has all four sections — *Tools I Used / What Helped Most / What I Had to Fix /
       What AI Struggled With* — each with real content, not a placeholder.
 - [ ] Both match what was actually built — no stale, missing, or aspirational claims.
+- [ ] Both are **concise** (Principle VII) — they cover what is required without padding, and do not
+      repeat content that already lives in another document.
 
 ## Conventions & examples
 

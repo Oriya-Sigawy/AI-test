@@ -39,7 +39,8 @@ documentation, and maintainability.
 
 The authoritative principles are defined in `.specify/memory/constitution.md`:
 Requirements First, Specification-Driven Development, Test Before Implementation (TDD),
-Simplicity Over Complexity, Security By Default, and Maintainability Over Cleverness.
+Simplicity Over Complexity, Security By Default, Maintainability Over Cleverness, and
+Minimal, Purposeful Documentation.
 
 - **Read the constitution at the start of work and treat it as authoritative.** When
   anything here conflicts with it, the constitution wins.
@@ -91,6 +92,12 @@ Never skip a gate because it has no skill.
 
 **Documentation is covered by `logging-docs-skill`, not a separate gate;** a final
 documentation-review task is added in `specs/001-expense-tracker-api/tasks.md`.
+
+**Keep all documentation minimal and purposeful (constitution Principle VII).** Write
+documentation only where it helps a reader understand something the code does not already
+make obvious; keep the required deliverables and workflow artifacts concise; and never
+produce documentation that restates the code, duplicates another document, or was not
+requested. Less, but load-bearing.
 
 ## Workflow
 
