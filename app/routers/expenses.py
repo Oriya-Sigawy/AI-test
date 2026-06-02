@@ -15,6 +15,7 @@ from app.schemas import (
     ExpenseFilters,
     ExpenseResponse,
     ExpenseUpdate,
+    ExpenseWriteResponse,
     Page,
     PaginationParams,
 )
@@ -30,7 +31,7 @@ from app.services import (
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
 
-@router.post("", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ExpenseWriteResponse, status_code=status.HTTP_201_CREATED)
 def create(
     data: ExpenseCreate,
     current_user: User = Depends(get_current_user),
@@ -62,7 +63,7 @@ def get_one(
     return get_expense(db, current_user, expense_id)
 
 
-@router.patch("/{expense_id}", response_model=ExpenseResponse)
+@router.patch("/{expense_id}", response_model=ExpenseWriteResponse)
 def update(
     expense_id: int,
     data: ExpenseUpdate,
