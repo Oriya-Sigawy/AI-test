@@ -1,23 +1,24 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 2.1.0 → 2.2.0
-Rationale: Adds the Testing review to the Plan phase (a testability check on plan.md) so the
-Development Workflow matches CLAUDE.md, which now fires Testing at the Plan gate. Materially
-expands workflow guidance; no principles added or removed → MINOR bump per the versioning policy.
+Version change: 2.2.0 → 2.3.0
+Rationale: Adds Principle VII (Minimal, Purposeful Documentation), establishing that
+documentation MUST be minimal and written only where it adds value the code does not already
+convey. A new principle is added → MINOR bump per the versioning policy.
 
 Modified sections:
-  - Development Workflow (Plan review now includes Testing — confirms the plan is testable)
-Added principles: N/A
+  - Core Principles (added Principle VII — Minimal, Purposeful Documentation)
+Added principles: VII. Minimal, Purposeful Documentation
 Removed principles: N/A
 Added sections: N/A
 Removed sections: N/A
 
 Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ aligned
+  - .specify/templates/constitution-template.md ✅ aligned
+  - .specify/templates/plan-template.md ✅ aligned (Constitution Check auto-derives gates)
   - .specify/templates/spec-template.md ✅ aligned
   - .specify/templates/tasks-template.md ✅ aligned
-  - CLAUDE.md ✅ aligned (Plan-phase gate now lists Testing)
+  - CLAUDE.md ✅ aligned (Principles list + documentation directive updated)
 
 Follow-up TODOs: None.
 -->
@@ -122,6 +123,27 @@ A future maintainer SHOULD be able to understand the project quickly.
 
 **Rationale**: Code is read far more often than it is written; clarity outlasts cleverness.
 
+### VII. Minimal, Purposeful Documentation
+
+Documentation MUST be minimal and earn its place. Write it only where it helps a reader
+understand something the code, names, or types do not already make obvious.
+
+The project MUST:
+
+- Prefer self-explanatory code to explanatory prose.
+- Keep required deliverables and workflow artifacts (`README.md`, `AI_USAGE.md`, `spec.md`,
+  `plan.md`, `tasks.md`) concise — cover what is required, and no more.
+
+The project MUST avoid:
+
+- Documentation that restates the code or the signature.
+- The same information duplicated across multiple documents.
+- Speculative, aspirational, or unrequested documentation.
+
+**Rationale**: Excess documentation is accidental complexity — it drifts out of date, buries
+the few notes that matter, and costs more to maintain than it returns. Prefer less, but
+load-bearing.
+
 ## Mandatory Review Gates
 
 Every change MUST be reviewed against the following areas before it is considered complete. A
@@ -178,4 +200,4 @@ tool conflicts with it, this constitution prevails.
 - **Compliance review**: All work MUST be verified against these principles and the Mandatory
   Review Gates. Any complexity that deviates from Principle IV MUST be explicitly justified.
 
-**Version**: 2.2.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-05-31
+**Version**: 2.3.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-02

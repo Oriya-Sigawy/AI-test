@@ -1,0 +1,13 @@
+# Keep the build context small and ensure local secrets / venv never enter it.
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.git/
+.pytest_cache/
+.claude/
+.specify/
+specs/
+docs/
+tests/
+*.md

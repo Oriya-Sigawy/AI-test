@@ -39,7 +39,8 @@ documentation, and maintainability.
 
 The authoritative principles are defined in `.specify/memory/constitution.md`:
 Requirements First, Specification-Driven Development, Test Before Implementation (TDD),
-Simplicity Over Complexity, Security By Default, and Maintainability Over Cleverness.
+Simplicity Over Complexity, Security By Default, Maintainability Over Cleverness, and
+Minimal, Purposeful Documentation.
 
 - **Read the constitution at the start of work and treat it as authoritative.** When
   anything here conflicts with it, the constitution wins.
@@ -49,8 +50,10 @@ Simplicity Over Complexity, Security By Default, and Maintainability Over Clever
 
 ## Project Documents
 
-Workflow artifacts live under `docs/`; deliverables live at the repo root. Existence is
-noted because most artifacts are not written yet — produce them in workflow order (below).
+The spec-kit feature artifacts (`spec.md`, `plan.md`, `tasks.md`, plus the Phase 0–1 supporting
+docs) live under `specs/001-expense-tracker-api/`; `requirements.md` and the project-tooling docs
+live under `docs/`; deliverables live at the repo root. Most feature artifacts now exist — the
+remaining ones are produced in workflow order (below).
 
 - [`docs/requirements.md`](docs/requirements.md) ✅ — what must be built; extracted from the
   assignment, no implementation details, no assumptions, no extra features. Source of truth.
@@ -58,9 +61,9 @@ noted because most artifacts are not written yet — produce them in workflow or
   assignment brief that `requirements.md` was distilled from.
 - [`docs/architecture.md`](docs/architecture.md) ✅ — map of *this project's* tooling (main
   agent, gate skills, code-review subagent, hooks) and when each fires. Not app architecture.
-- `docs/spec.md` *(to create)* — the specification derived from requirements.
-- `docs/plan.md` *(to create)* — the implementation plan derived from the spec.
-- `docs/tasks.md` *(to create)* — the dependency-ordered tasks derived from the plan.
+- [`specs/001-expense-tracker-api/spec.md`](specs/001-expense-tracker-api/spec.md) ✅ — the specification derived from requirements.
+- [`specs/001-expense-tracker-api/plan.md`](specs/001-expense-tracker-api/plan.md) ✅ — the implementation plan derived from the spec.
+- `specs/001-expense-tracker-api/tasks.md` *(to create)* — the dependency-ordered tasks derived from the plan.
 - `.specify/memory/constitution.md` ✅ — the authoritative principles; read first.
 - `README.md` *(to create, deliverable)* — run instructions, test instructions, two design decisions.
 - `AI_USAGE.md` *(to create, deliverable)* — Tools I Used / What Helped Most / What I Had to Fix /
@@ -88,7 +91,13 @@ manually against the constitution and the checklist above (on the plan, the task
 Never skip a gate because it has no skill.
 
 **Documentation is covered by `logging-docs-skill`, not a separate gate;** a final
-documentation-review task is added in `docs/tasks.md`.
+documentation-review task is added in `specs/001-expense-tracker-api/tasks.md`.
+
+**Keep all documentation minimal and purposeful (constitution Principle VII).** Write
+documentation only where it helps a reader understand something the code does not already
+make obvious; keep the required deliverables and workflow artifacts concise; and never
+produce documentation that restates the code, duplicates another document, or was not
+requested. Less, but load-bearing.
 
 ## Workflow
 
@@ -96,26 +105,26 @@ This is the single source of truth for *when* each gate fires. Produce each arti
 in order; run the listed gates before moving on.
 
 1. **Requirements** (`docs/requirements.md`) → Security.
-2. **Specification** (`docs/spec.md`) → Security.
-3. **Plan** (`docs/plan.md`) → Security, Performance, Architecture, Testing (the plan is
+2. **Specification** (`specs/001-expense-tracker-api/spec.md`) → Security.
+3. **Plan** (`specs/001-expense-tracker-api/plan.md`) → Security, Performance, Architecture, Testing (the plan is
    testable: every described behavior can be tested, edge and failure cases are
-   identifiable, success criteria are measurable). Resolve findings, update `docs/plan.md`,
+   identifiable, success criteria are measurable). Resolve findings, update `specs/001-expense-tracker-api/plan.md`,
    then **get the developer's approval before any code is written.**
-4. **Tasks** (`docs/tasks.md`) → all five gates. Confirm every task is testable and has a
+4. **Tasks** (`specs/001-expense-tracker-api/tasks.md`) → all five gates. Confirm every task is testable and has a
    test task; security- and performance-sensitive work is captured as explicit tasks;
-   logging is included in the relevant tasks; the breakdown is simple. Update `docs/tasks.md`.
-5. **Implementation** — precondition: `docs/requirements.md`, `docs/spec.md`, `docs/plan.md`,
-   and the task in `docs/tasks.md` exist; if any is missing, stop and say what is missing. Then, per
+   logging is included in the relevant tasks; the breakdown is simple. Update `specs/001-expense-tracker-api/tasks.md`.
+5. **Implementation** — precondition: `docs/requirements.md`, `specs/001-expense-tracker-api/spec.md`, `specs/001-expense-tracker-api/plan.md`,
+   and the task in `specs/001-expense-tracker-api/tasks.md` exist; if any is missing, stop and say what is missing. Then, per
    task (TDD):
-   1. Read `docs/plan.md` and identify the behavior being implemented.
-   2. Write or update tests from `docs/plan.md`, applying Testing; never test implementation
+   1. Read `specs/001-expense-tracker-api/plan.md` and identify the behavior being implemented.
+   2. Write or update tests from `specs/001-expense-tracker-api/plan.md`, applying Testing; never test implementation
       details, and never write production code before its tests exist.
    3. Verify the tests fail for the expected reason.
    4. Implement the code, writing logs and updating documentation as you go (applying
       `logging-docs-skill`, which covers both).
    5. Verify the tests pass.
 6. **After Implementation** — before the feature is considered complete:
-   1. Confirm every requirement in `docs/requirements.md`/`docs/spec.md` is implemented and that no
+   1. Confirm every requirement in `docs/requirements.md`/`specs/001-expense-tracker-api/spec.md` is implemented and that no
       unrequested features were added (Principle I).
    2. Re-review the code by **delegating to the `code-review-subagent`** (`.claude/agents/`): it
       audits the whole change against **all five gates** (Security, Testing, Performance, Logging,
@@ -123,6 +132,14 @@ in order; run the listed gates before moving on.
       findings. The subagent is advisory and never approves — the developer gives final acceptance.
 
    This Step-6 subagent pass is distinct from the Step-5 gates, which the main agent applies
-   inline per task. The task generator SHOULD emit a final review task in `docs/tasks.md`, but the
-   requirement to perform this review lives here, not in `docs/tasks.md`.
+   inline per task. The task generator SHOULD emit a final review task in `specs/001-expense-tracker-api/tasks.md`, but the
+   requirement to perform this review lives here, not in `specs/001-expense-tracker-api/tasks.md`.
+
+<!-- SPECKIT START -->
+## Active Feature
+
+- **001-expense-tracker-api** — Personal Expense Tracker API.
+  Plan: [`specs/001-expense-tracker-api/plan.md`](specs/001-expense-tracker-api/plan.md)
+  (Phase 0–1 artifacts: `research.md`, `data-model.md`, `contracts/api.md`, `quickstart.md`).
+<!-- SPECKIT END -->
 

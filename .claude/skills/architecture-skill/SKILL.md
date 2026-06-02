@@ -50,8 +50,8 @@ the findings and gives final acceptance.
       generality the assignment doesn't call for (YAGNI).
 - [ ] **Separation of concerns** is clear: routing / business logic / data access are distinct, and the
       plan says where each responsibility lives.
-- [ ] Every component in the plan **traces to a requirement** in `requirements.md` / `spec.md`; nothing
-      extra is being built.
+- [ ] Every component in the plan **traces to a requirement** in `docs/requirements.md` / the feature
+      `spec.md`; nothing extra is being built.
 - [ ] Dependencies flow one way (no circular or tangled module relationships described).
 
 ## Mode 2 — Tasks review (read only)

@@ -52,8 +52,11 @@ constitution and the summary here. If a skill is missing, do the same. **Never s
 
 ## How to work
 
-1. Read the constitution and any `requirements.md` / `spec.md` / `plan.md` / `tasks.md`, so you
-   check the change against what was required and planned.
+1. Read the constitution, the requirements source of truth (`docs/requirements.md`), and the active
+   feature's `spec.md` / `plan.md` / `tasks.md` under `specs/<feature>/` (e.g.
+   `specs/001-expense-tracker-api/`), so you check the change against what was required and planned.
+   Note: `specs/<feature>/checklists/requirements.md` is a **spec-quality checklist**, not the
+   requirements — don't mistake it for `docs/requirements.md`.
 2. Identify the diff (see Scope).
 3. Walk each gate. Every finding cites `file:line`, states the problem and a suggested fix — don't apply it.
 4. Flag any behavior not backed by a requirement (Principle I) and any code lacking a test (Principle III).
