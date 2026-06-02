@@ -1,0 +1,38 @@
+# Runs the API alongside PostgreSQL. The API waits for the db healthcheck before
+# starting, so its create_all + seed never races a not-yet-ready database.
+# Variable values are read from .env (see .env.example); copy it first.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Bound to loopback only — local pytest reaches TEST_DATABASE_URL at
+      # localhost:5432, without exposing the DB on other host interfaces.
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      # In-network URL to the db service. Overrides the localhost DATABASE_URL in
+      # .env (which is only for running the API outside Docker).
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
