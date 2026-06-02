@@ -34,3 +34,14 @@ class Settings(BaseSettings):
 
 settings = Settings()
 """Shared settings instance, imported wherever configuration is needed."""
+
+
+DEFAULT_CATEGORIES: tuple[dict[str, str], ...] = (
+    {"name": "Food", "icon": "food", "color": "#FF8800"},
+    {"name": "Transport", "icon": "transport", "color": "#3498DB"},
+    {"name": "Entertainment", "icon": "entertainment", "color": "#9B59B6"},
+    {"name": "Shopping", "icon": "shopping", "color": "#E91E63"},
+    {"name": "Bills", "icon": "bills", "color": "#E74C3C"},
+    {"name": "Health", "icon": "health", "color": "#2ECC71"},
+    {"name": "Other", "icon": "other", "color": "#95A5A6"},
+)
