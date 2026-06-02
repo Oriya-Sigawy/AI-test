@@ -220,8 +220,11 @@ savepoints, so the fixture's single outer `rollback()` at teardown still wipes e
 Real Postgres (not SQLite) so `NUMERIC`, case-insensitive uniqueness, and aggregation match prod.
 
 **Style.** Behavior-first: most tests drive the public HTTP API (black-box). A few unit tests cover
-pure functions where a request would obscure the math: budget-warning computation, trend
-month-window generation, and the date-bound check.
+pure functions where a request would obscure the logic: budget-warning computation, trend
+month-window generation, the date-bound check (reference date injected so the test stays
+deterministic), and the security helpers — password pre-hash/verify (incl. the >72-byte truncation
+defeat) and JWT encode/decode (round-trip + expired/tampered rejection). DB-coupled logic
+(owner-scoping, uniqueness, deletion guard, aggregation) is exercised through the API, not unit-tested.
 
 **Fixtures.** `client`, `db_session`, `auth_headers` (a registered+logged-in user), `second_user`
 (cross-user isolation). Tests build their own data; no shared mutable state.
