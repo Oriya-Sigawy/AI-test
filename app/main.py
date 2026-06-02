@@ -21,7 +21,7 @@ from app.database import Base, SessionLocal, engine
 from app.errors import install_error_handlers
 from app.logging_config import configure_logging, request_id_var
 from app.models import Category
-from app.routers import auth, categories, expenses
+from app.routers import auth, budgets, categories, expenses, reports
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +94,5 @@ install_error_handlers(app)
 app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(expenses.router)
+app.include_router(budgets.router)
+app.include_router(reports.router)

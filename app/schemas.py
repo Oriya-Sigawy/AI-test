@@ -12,7 +12,14 @@ from decimal import Decimal
 from enum import Enum
 from typing import Annotated, Generic, TypeVar
 from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_serializer,
+)
 
 from app.config import settings
 
@@ -361,6 +368,44 @@ class ExpenseResponse(BaseModel):
         return f"{value:.2f}"
 
 
+class BudgetWarning(BaseModel):
+    """The budget-exceeded warning attached to a create/update expense response (FR-029).
+
+    Present only when the expense's month-and-category total *strictly* exceeds that period's
+    budget. ``category_name`` is a plain string label — deliberately not the nested ``category``
+    object used everywhere else; the money fields serialize as strings like every other amount.
+    """
+
+    category_name: str
+    budget: Decimal
+    spent: Decimal
+    exceeded_by: Decimal
+
+    @field_serializer("budget", "spent", "exceeded_by")
+    def _serialize_amount(self, value: Decimal) -> str:
+        """Render each amount with exactly two decimals as a string to preserve precision."""
+        return f"{value:.2f}"
+
+
+class ExpenseWriteResponse(ExpenseResponse):
+    """An expense returned from create/update: an ``ExpenseResponse`` plus an optional warning.
+
+    The ``budget_warning`` is included only when the period is over budget; otherwise it is
+    dropped from the payload entirely (never emitted as ``null``), matching the contract where
+    the field is absent unless a budget is exceeded.
+    """
+
+    budget_warning: BudgetWarning | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_absent_warning(self, handler):
+        """Serialize as usual, then drop ``budget_warning`` when there is none (no null key)."""
+        data = handler(self)
+        if data.get("budget_warning") is None:
+            data.pop("budget_warning", None)
+        return data
+
+
 class ExpenseFilters:
     """Optional expense-list filters, used as a FastAPI dependency (``Depends(ExpenseFilters)``).
 
@@ -382,3 +427,119 @@ class ExpenseFilters:
         self.category_id = category_id
         self.amount_min = amount_min
         self.amount_max = amount_max
+
+
+# --- Budgets --------------------------------------------------------------------------
+
+# A budget amount may be zero (a deliberate "no spending" limit) but not negative; it shares the
+# expenses' 11-digit / 2-decimal ceiling (FR-018/019). The sign rule differs from ``ExpenseAmount``
+# (which is strictly positive), so it is its own annotation.
+BudgetAmount = Annotated[Decimal, Field(ge=0, max_digits=_AMOUNT_MAX_DIGITS, decimal_places=2)]
+
+
+class BudgetUpsert(BaseModel):
+    """A set-or-update budget request for one ``(category, month, year)`` (FR-026).
+
+    ``amount`` may be zero but not negative; ``month`` is 1–12 and ``year`` a sane calendar year
+    (matching the table's CHECK bounds). Re-sending an existing period updates it in place rather
+    than creating a second budget — an idempotent upsert.
+    """
+
+    category_id: int
+    amount: BudgetAmount
+    month: int = Field(ge=1, le=12)
+    year: int = Field(ge=2000, le=2100)
+
+
+class BudgetResponse(BaseModel):
+    """A stored budget as returned to clients: its category embedded and the amount as a string."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    category: CategoryRef
+    amount: Decimal
+    month: int
+    year: int
+
+    @field_serializer("amount")
+    def _serialize_amount(self, value: Decimal) -> str:
+        """Render the amount with exactly two decimals as a string to preserve precision."""
+        return f"{value:.2f}"
+
+
+# --- Reports --------------------------------------------------------------------------
+
+
+class CategoryTotal(BaseModel):
+    """One category's total spend within a monthly summary; the amount serializes as a string."""
+
+    category: CategoryRef
+    total: Decimal
+
+    @field_serializer("total")
+    def _serialize_amount(self, value: Decimal) -> str:
+        """Render the total with exactly two decimals as a string to preserve precision."""
+        return f"{value:.2f}"
+
+
+class MonthlySummaryResponse(BaseModel):
+    """A month's total spend with its per-category breakdown — non-zero categories only (FR-030)."""
+
+    month: int
+    year: int
+    total: Decimal
+    by_category: list[CategoryTotal]
+
+    @field_serializer("total")
+    def _serialize_amount(self, value: Decimal) -> str:
+        """Render the total with exactly two decimals as a string to preserve precision."""
+        return f"{value:.2f}"
+
+
+class TrendMonth(BaseModel):
+    """One month's total in a spending trend; zero when the month had no spend (FR-031)."""
+
+    year: int
+    month: int
+    total: Decimal
+
+    @field_serializer("total")
+    def _serialize_amount(self, value: Decimal) -> str:
+        """Render the total with exactly two decimals as a string to preserve precision."""
+        return f"{value:.2f}"
+
+
+class TrendResponse(BaseModel):
+    """A spending trend: one total per month over the requested window, oldest→newest (FR-031)."""
+
+    months: list[TrendMonth]
+
+
+class BudgetStatusRow(BaseModel):
+    """One budgeted category's spend versus its budget for the month, with the remaining balance.
+
+    ``remaining`` is ``budget − spent`` and goes negative once the budget is exceeded (FR-032).
+    """
+
+    category: CategoryRef
+    budget: Decimal
+    spent: Decimal
+    remaining: Decimal
+
+    @field_serializer("budget", "spent", "remaining")
+    def _serialize_amount(self, value: Decimal) -> str:
+        """Render each amount with exactly two decimals as a string to preserve precision."""
+        return f"{value:.2f}"
+
+
+class BudgetStatusResponse(BaseModel):
+    """Per budgeted category for the month: spent vs budget with remaining (FR-032).
+
+    Only categories that have a budget set for the month appear (a spent-but-unbudgeted category
+    is omitted).
+    """
+
+    month: int
+    year: int
+    categories: list[BudgetStatusRow]
