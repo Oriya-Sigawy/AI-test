@@ -142,4 +142,3 @@ in order; run the listed gates before moving on.
   Plan: [`specs/001-expense-tracker-api/plan.md`](specs/001-expense-tracker-api/plan.md)
   (Phase 0–1 artifacts: `research.md`, `data-model.md`, `contracts/api.md`, `quickstart.md`).
 <!-- SPECKIT END -->
-
