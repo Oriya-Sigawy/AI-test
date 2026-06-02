@@ -56,7 +56,9 @@ def register_user(db: Session, data: RegisterRequest) -> User:
 
     Email uniqueness is enforced case-insensitively by the database index, so a duplicate is
     caught as an ``IntegrityError`` and surfaced as a ``Conflict`` — no read-then-write race.
-    Only the email's domain is logged, never the address or password.
+    The conflict message is intentionally generic: it does not confirm that the email is
+    already registered, to avoid account enumeration. Only the email's domain is logged,
+    never the address or password.
     """
     user = User(
         email=data.email,
@@ -69,7 +71,7 @@ def register_user(db: Session, data: RegisterRequest) -> User:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        raise Conflict("An account with this email already exists") from exc
+        raise Conflict("Registration could not be completed") from exc
     db.refresh(user)
     logger.info(
         "account registered",
