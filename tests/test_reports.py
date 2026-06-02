@@ -65,6 +65,35 @@ def test_monthly_summary_total_equals_sum_and_breakdown_is_non_zero_only(
     assert all(isinstance(t, str) for t in by_name.values())
 
 
+def test_future_dated_expense_is_counted_in_its_own_future_month(
+    client, auth_headers, db_session, monkeypatch
+):
+    """An expense dated within the 7-day future bound is reported in the month of its date.
+
+    When that date falls in the next calendar month, the expense lands in that future month's
+    summary and is absent from the current month's (spec Edge Cases: a future-dated expense can
+    land in a future month). 'Today' is pinned near month-end so a date a few days ahead crosses
+    into the next month while staying inside the 7-day creation bound.
+    """
+    import app.schemas as schemas
+
+    monkeypatch.setattr(schemas, "_utc_today", lambda: dt.date(2026, 1, 28))
+    food = _category_id(db_session, "Food")
+    _add_expense(client, auth_headers, food, "20.00", "2026-01-20")  # current month
+    _add_expense(client, auth_headers, food, "75.00", "2026-02-02")  # 5 days ahead, next month
+
+    january = client.get(
+        "/reports/monthly-summary", params={"month": 1, "year": 2026}, headers=auth_headers
+    ).json()
+    february = client.get(
+        "/reports/monthly-summary", params={"month": 2, "year": 2026}, headers=auth_headers
+    ).json()
+
+    assert january["total"] == "20.00"  # only the current-month expense
+    assert february["total"] == "75.00"  # the future-dated expense lands in February
+    assert [row["category"]["name"] for row in february["by_category"]] == ["Food"]
+
+
 # --- Trend ----------------------------------------------------------------------------
 
 
