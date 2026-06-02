@@ -57,6 +57,6 @@
 - [x] T021 [test] `test_logging.py`: register then login and assert records carry request_id + expected event/user_id and **never** contain the password, its hash, the token, or the full email address; **and a rejected op emits a `domain_error` record (category + status, WARNING) carrying no sensitive data** — the one place log output is asserted (plan §Test Strategy). (plan §Logging, §Test Strategy)
 
 ## Phase 8 — Step 6 review & deliverables
-- [ ] T022 Run full suite green; confirm ≥8 tests + all 4 areas (SC-008); confirm every FR implemented and no unrequested features. (Principle I; SC-008)
-- [ ] T023 `README.md` (run, test, two design decisions) + `AI_USAGE.md` (four sections); logging-docs-skill review. (deliverables; plan §Documentation)
-- [ ] T024 Final five-gate review via `code-review-subagent` (Security, Testing, Performance, Logging, Architecture) over the **whole change incl. deliverables**; resolve findings. (CLAUDE.md Step 6)
+- [x] T022 Run full suite green; confirm ≥8 tests + all 4 areas (SC-008); confirm every FR implemented and no unrequested features. (Principle I; SC-008)
+- [x] T023 `README.md` (run, test, two design decisions) + `AI_USAGE.md` (four sections); logging-docs-skill review. (deliverables; plan §Documentation)
+- [x] T024 Final five-gate review via `code-review-subagent` (Security, Testing, Performance, Logging, Architecture) over the **whole change incl. deliverables**; resolve findings. (CLAUDE.md Step 6)
