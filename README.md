@@ -56,19 +56,18 @@ walkthrough — every command and how to authorize and explore the API — in
 
 ## Design decisions
 
-**1. Money is exact `Decimal`, never `float`.** Amounts are stored as PostgreSQL
-`NUMERIC(11, 2)`, handled as Python `Decimal` throughout, and serialized on the wire as
-JSON *strings* (e.g. `"42.50"`). Floating-point can't represent most decimal fractions
-exactly, so summing expenses or comparing spend against a budget with floats would
-accumulate rounding errors — unacceptable for financial data. The `NUMERIC(11, 2)` type
-also enforces the amount ceiling and two-decimal precision at the database level, and the
-string serialization stops a client's float round-trip from perturbing the value.
+**1. Test through the HTTP layer.**
 
-**2. Integrity is enforced by the database, not by read-then-write checks.** Uniqueness
-(case-insensitive email, per-user category names, one budget per category/month) lives in
-unique indexes; value bounds (positive amount, valid month/year) live in `CHECK`
-constraints; and setting a budget is a single `INSERT ... ON CONFLICT DO UPDATE` upsert.
-Doing these checks in application code with a separate "does it exist?" query first would
-leave a race window where two concurrent requests both pass the check and then both write.
-Letting the database be the single source of truth makes the rules race-free; the service
-layer simply catches the resulting `IntegrityError` and returns a clean `409 Conflict`.
+I wanted to use the app for real, so I built a small CLI client. For tests, I weighed three options with AI:
+
+- Call the service functions directly.
+- Drive the running app over HTTP with FastAPI's `TestClient`.
+- Exercise everything through the CLI.
+
+I chose **HTTP**: it tests the app the way a real client uses it — routing, validation, serialization, status codes, auth — without coupling to internals, so a behavior-preserving refactor won't break the suite. The service-only option skips the HTTP contract; the CLI-only option just adds a moving part that makes failures harder to locate.
+
+**2. Generic response when registering an existing email.**
+
+The conventional answer is `409 Conflict` with a message like "email already registered" — but that confirms the address has an account, an **enumeration risk** (an attacker can probe who's registered).
+
+My balance: still return `409`, but with a generic message that doesn't confirm the email exists, and log only the email's *domain*. Login follows the same rule — wrong password and unknown email both return an identical `401` — so neither flow leaks which accounts exist.
