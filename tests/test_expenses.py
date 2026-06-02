@@ -61,6 +61,21 @@ def _create(client, auth_headers, category_id, **overrides):
     )
 
 
+@pytest.fixture
+def pinned_today(monkeypatch):
+    """Pin the server's notion of "today" to the tests' reference date.
+
+    The 7-day future bound is checked server-side against UTC today, while the tests build
+    dates from the local ``dt.date.today()``; near the UTC/local date boundary a 1-day skew
+    would flip the inclusive 7-day boundary cases. Pinning both to the same ``_TODAY`` keeps
+    those cases deterministic regardless of the runner's timezone.
+    """
+    import app.schemas as schemas
+
+    monkeypatch.setattr(schemas, "_utc_today", lambda: _TODAY)
+    return _TODAY
+
+
 # --- Create ---------------------------------------------------------------------------
 
 
@@ -82,7 +97,9 @@ def test_create_expense_against_default_category(client, auth_headers, food_cate
     assert "budget_warning" not in body  # no budget set → no warning
 
 
-def test_create_expense_accepts_exactly_seven_days_ahead(client, auth_headers, food_category_id):
+def test_create_expense_accepts_exactly_seven_days_ahead(
+    client, auth_headers, food_category_id, pinned_today
+):
     """A date exactly 7 days in the future (the inclusive boundary) is accepted."""
     seven_ahead = (_TODAY + dt.timedelta(days=7)).isoformat()
     resp = _create(client, auth_headers, food_category_id, date=seven_ahead)
@@ -103,7 +120,7 @@ def test_create_expense_accepts_exactly_seven_days_ahead(client, auth_headers, f
     ],
 )
 def test_create_expense_invalid_field_returns_422(
-    client, auth_headers, food_category_id, overrides, field
+    client, auth_headers, food_category_id, overrides, field, pinned_today
 ):
     """Each invalid field is rejected as a validation error naming the offending field and reason."""
     resp = _create(client, auth_headers, food_category_id, **overrides)
@@ -216,6 +233,21 @@ def test_list_expenses_rejects_malformed_pagination(client, auth_headers, params
     resp = client.get("/expenses", params=params, headers=auth_headers)
     assert resp.status_code == 422, resp.text
     assert resp.json()["field"] == field
+
+
+def test_list_is_owner_scoped(client, auth_headers, second_user, food_category_id):
+    """The expense list returns only the caller's own expenses, never another user's (FR-023).
+
+    Both users spend against the same shared default category, so only the owner-scoped query —
+    not category visibility — keeps the second user's expense out of the primary user's list.
+    """
+    mine = _create(client, auth_headers, food_category_id, amount="10.00").json()["id"]
+    theirs = _create(client, second_user, food_category_id, amount="20.00").json()["id"]
+
+    listing = client.get("/expenses", headers=auth_headers).json()
+    assert listing["total"] == 1
+    assert {item["id"] for item in listing["items"]} == {mine}
+    assert theirs not in {item["id"] for item in listing["items"]}
 
 
 # --- Get, update, delete --------------------------------------------------------------
