@@ -1,8 +1,8 @@
 """Shared pytest fixtures: test-DB schema + seed, per-test rollback, HTTP client, auth.
 
-Tests run against a dedicated Postgres ``TEST_DATABASE_URL`` — never the dev/prod DB
-(plan §Test Strategy; research §11). A session-scoped fixture builds the schema and seeds
-the seven default categories once. Each test then runs inside an outer transaction on its
+Tests run against a dedicated Postgres ``TEST_DATABASE_URL`` — never the dev/prod DB.
+A session-scoped fixture builds the schema and seeds the seven default categories once.
+Each test then runs inside an outer transaction on its
 own connection that is rolled back at teardown, so tests are independent. The app's
 ``get_db`` is overridden to yield that same session; because services call
 ``session.commit()``, the session joins the outer transaction in ``create_savepoint`` mode,
