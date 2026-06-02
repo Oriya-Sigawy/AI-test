@@ -14,8 +14,10 @@ import httpx
 import typer
 
 app = typer.Typer(help="Personal Expense Tracker CLI (a thin client over the REST API).")
+category_app = typer.Typer(help="Manage your custom categories.")
 expense_app = typer.Typer(help="Add and list expenses.")
 report_app = typer.Typer(help="View spending reports.")
+app.add_typer(category_app, name="category")
 app.add_typer(expense_app, name="expense")
 app.add_typer(report_app, name="report")
 
@@ -84,6 +86,12 @@ def _fail(response: httpx.Response) -> None:
     raise typer.Exit(1)
 
 
+def _hex_to_rgb(color: str) -> tuple[int, int, int]:
+    """Return the ``(r, g, b)`` components of a ``#RRGGBB`` color (the format the API guarantees)."""
+    value = color.lstrip("#")
+    return int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16)
+
+
 def _resolve_category_id(name: str) -> int:
     """Return the id of the visible category matching ``name`` (case-insensitive), or exit.
 
@@ -137,6 +145,21 @@ def login(
     typer.echo("Logged in; token saved.")
 
 
+@category_app.command("add")
+def category_add(
+    name: str = typer.Option(..., "--name", help="Category name (unique, 1-50 chars)."),
+    icon: str = typer.Option(..., "--icon", help="Icon identifier, e.g. cup."),
+    color: str = typer.Option(..., "--color", help="Hex color #RRGGBB, e.g. #6F4E37."),
+) -> None:
+    """Create a custom category."""
+    response = _request(
+        "POST", "/categories", json={"name": name, "icon": icon, "color": color}, auth=True
+    )
+    body = response.json()
+    styled = typer.style(body["name"], fg=_hex_to_rgb(body["color"]))
+    typer.echo(f"Created category {body['id']}: {styled} (icon {body['icon']}).")
+
+
 @expense_app.command("add")
 def expense_add(
     amount: str = typer.Option(..., "--amount", help='Amount, e.g. "12.50" (your default currency).'),
@@ -179,9 +202,13 @@ def expense_list(
         params["date_to"] = date_to
     page = _request("GET", "/expenses", params=params, auth=True).json()
     for item in page["items"]:
+        category = item["category"]
+        # Tint the category name with its own color; typer.echo strips the codes automatically
+        # when output is not a terminal (piped/redirected), so this stays scripting-safe.
+        name = typer.style(category["name"], fg=_hex_to_rgb(category["color"]))
         typer.echo(
             f"{item['id']}\t{item['date']}\t{item['amount']} {item['currency']}"
-            f"\t{item['category']['name']}\t{item['description'] or ''}"
+            f"\t{name}\t{item['description'] or ''}"
         )
     typer.echo(f"({page['total']} total, showing {len(page['items'])})")
 
